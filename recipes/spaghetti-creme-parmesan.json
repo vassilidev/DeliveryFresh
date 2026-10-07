@@ -1,0 +1,22 @@
+{
+ "slug": "spaghetti-creme-parmesan",
+ "title": "Spaghetti crème & parmesan",
+ "subtitle": "sauce minute, avec les spaghetti restants — 1 portion",
+ "time": 12, "difficulty": "Très facile", "servings": 1,
+ "equipment": ["Casserole", "Poêle", "Bouilloire"],
+ "tags": ["rapide", "pâtes", "crémeux", "anti-gaspi", "sans four"],
+ "ingredients": [
+  {"name": "Spaghetti (le reste du paquet)", "qty": "120 g"},
+  {"name": "Crème liquide entière", "qty": "6 cl"},
+  {"name": "Parmesan", "qty": "25 g"},
+  {"name": "Tomates cerises (facultatif)", "qty": "quelques-unes"},
+  {"name": "Sel, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Cuisson", "text": "Fais bouillir l'eau à la bouilloire, sale-la dans une casserole et cuis les spaghetti selon le paquet (~9 min). Garde une louche d'eau de cuisson."},
+  {"title": "Sauce", "text": "2 min avant la fin, chauffe la crème dans une poêle à feu doux avec la moitié du parmesan et beaucoup de poivre."},
+  {"title": "Enrober", "text": "Égoutte les pâtes, verse-les dans la poêle avec 2 c. à soupe d'eau de cuisson. Mélange 30 s jusqu'à ce que la sauce nappe."},
+  {"title": "Servir", "text": "Parsème du reste de parmesan, poivre. Ajoute quelques tomates cerises coupées si tu en as."}
+ ],
+ "tip": "L'eau de cuisson lie la sauce : elle devient brillante au lieu d'être grasse."
+}

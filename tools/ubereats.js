@@ -8,6 +8,8 @@
 //   remove <draftUuid> <cartItemUuid>     supprime un article
 //   clear <draftUuid|all>            vide le panier (all = tous les paniers du compte)
 //   checkout <draftUuid>             détail des frais + total final, SANS commander
+//   verify <draftUuid>               relit le panier réel : articles devenus indisponibles (prix 0), coûts, total
+//   (fill affiche directement le résultat de verify)
 const { open, waitCloudflare } = require('./browser');
 const profile = require('./profile');
 
@@ -181,7 +183,26 @@ async function checkout(api, draftUuid) {
   return { draftUuid, subtotal: eur(d.subtotal?.subtotal?.value), total: eur(d.total?.total?.value), lines };
 }
 
-module.exports = { session, stores, search, getStore, flattenCatalog, grams, carts, fill, setQty, remove, clear, checkout };
+// Relit le panier réel. Un article passé en rupture reste dans le panier avec price = 0 (refusé au paiement),
+// même si la recherche le montre encore disponible : c'est ce qu'il faut remplacer.
+async function verify(api, draftUuid) {
+  const d = await api('getDraftOrderByUuidV1', { draftOrderUuid: draftUuid });
+  const items = d.shoppingCart.items.map(i => {
+    const q = i.itemQuantity?.inSellableUnit;
+    const g = q?.measurementUnit?.measurementType === 'MEASUREMENT_TYPE_WEIGHT' ? q.value.coefficient * 10 ** q.value.exponent : null;
+    return {
+      cartItemUuid: i.shoppingCartItemUuid, itemUuid: i.uuid, title: i.title, qty: i.quantity, grams: g,
+      cost: +((g ? i.price * g : i.price * i.quantity) / 100).toFixed(2), unavailable: !i.price,
+    };
+  });
+  const co = await checkout(api, draftUuid);
+  return {
+    platform: 'ubereats', cartRef: draftUuid, draftUuid, storeUuid: d.storeUuid, checkedAt: new Date().toISOString(),
+    items, unavailable: items.filter(i => i.unavailable), subtotal: co.subtotal, total: co.total, lines: co.lines,
+  };
+}
+
+module.exports = { session, stores, search, getStore, flattenCatalog, grams, carts, fill, setQty, remove, clear, checkout, verify };
 
 if (require.main === module) {
   (async () => {
@@ -192,7 +213,8 @@ if (require.main === module) {
         stores: () => stores(api, args[0]),
         search: () => search(api, args[0], args.slice(1)),
         carts: () => carts(api),
-        fill: async () => checkout(api, await fill(api, JSON.parse(require('fs').readFileSync(args[0], 'utf8')))),
+        fill: async () => verify(api, await fill(api, JSON.parse(require('fs').readFileSync(args[0], 'utf8')))),
+        verify: () => verify(api, args[0]),
         qty: () => setQty(api, args[0], args[1], args[2]).then(() => carts(api)),
         remove: () => remove(api, args[0], args[1]).then(() => carts(api)),
         clear: () => clear(api, args[0]).then(() => carts(api)),

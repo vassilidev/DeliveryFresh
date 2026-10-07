@@ -1,0 +1,23 @@
+{
+ "slug": "pates-pesto-burrata",
+ "title": "Pâtes au pesto, burrata & tomates cerises",
+ "subtitle": "prêt pendant la cuisson des pâtes — 1 belle portion",
+ "time": 12, "difficulty": "Facile", "servings": 1,
+ "equipment": ["Casserole", "Bouilloire"],
+ "tags": ["rapide", "végétarien", "frais", "sans four"],
+ "ingredients": [
+  {"name": "Spaghetti", "qty": "120 g"},
+  {"name": "Pesto alla genovese", "qty": "3 c. à soupe (~60 g)"},
+  {"name": "Burrata", "qty": "1 (125 g)"},
+  {"name": "Tomates cerises", "qty": "150 g"},
+  {"name": "Basilic frais (si pris)", "qty": "quelques feuilles"},
+  {"name": "Huile d'olive, sel, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Les pâtes", "text": "Fais bouillir de l'eau à la bouilloire, verse-la dans une casserole bien salée et cuis les spaghetti selon le paquet (~9-10 min)."},
+  {"title": "Les tomates", "text": "Pendant ce temps, coupe les tomates cerises en deux, sale-les et arrose-les d'un filet d'huile. Sors la burrata du frigo."},
+  {"title": "Mélanger", "text": "Garde 2 c. à soupe d'eau de cuisson, égoutte les pâtes et mélange-les hors du feu avec le pesto et l'eau de cuisson : la sauce devient onctueuse."},
+  {"title": "Servir", "text": "Dresse les pâtes, ajoute les tomates, pose la burrata entière au centre, ouvre-la à la fourchette. Poivre, basilic, filet d'huile."}
+ ],
+ "tip": "Ne fais jamais chauffer le pesto : il perd son parfum. On le mélange hors du feu."
+}

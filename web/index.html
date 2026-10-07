@@ -52,6 +52,8 @@ table.cmp { width: 100%; border-collapse: collapse } .cmp td, .cmp th { padding:
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const eur = n => n == null ? '—' : n.toFixed(2).replace('.', ',') + ' €';
+// Prix PAYÉ par repas (comparable entre paniers) ; le coût consommé par repas (perMeal, calcul de l'IA) est affiché sur la commande.
+const perMeal = (b, nMeals) => nMeals ? b.total / nMeals : null;
 async function api(path, opts = {}) {
   const r = await fetch('/api' + path, { ...opts, headers: { 'content-type': 'application/json' }, body: opts.body && JSON.stringify(opts.body) });
   const j = await r.json().catch(() => ({}));
@@ -85,7 +87,8 @@ const views = {
       const f = new FormData(e.target);
       try {
         const { id } = await api('/orders', { method: 'POST', body: {
-          slots: f.getAll('slot'), people: f.get('people'), exceptions: f.get('exceptions'), extras: f.get('extras'),
+          // ordre chronologique (le tableau se lit ligne par ligne : tous les midis puis tous les soirs)
+          slots: [...e.target.querySelectorAll('input[name=slot]:checked')].sort((a, b) => a.dataset.k - b.dataset.k).map(x => x.value), people: f.get('people'), exceptions: f.get('exceptions'), extras: f.get('extras'),
           wishes: f.get('wishes'), budget: f.get('budget'), platforms: f.getAll('platform'),
         } });
         location.hash = '#/o/' + id;
@@ -96,7 +99,7 @@ const views = {
       <div class="slots"><table><tr><th></th>${days.map(d => `<th>${esc(fmt(d))}</th>`).join('')}</tr>
         ${['midi', 'soir'].map(m => `<tr><th>${m}</th>${days.map((d, i) => {
           const past = i === 0 && (m === 'midi' ? hour >= 14 : hour >= 21);
-          return `<td><input type="checkbox" name="slot" value="${esc(fmt(d) + ' ' + m)}" aria-label="${esc(fmt(d) + ' ' + m)}" ${past ? 'disabled' : ''}></td>`;
+          return `<td><input type="checkbox" name="slot" data-k="${i * 2 + (m === 'soir' ? 1 : 0)}" value="${esc(fmt(d) + ' ' + m)}" aria-label="${esc(fmt(d) + ' ' + m)}" ${past ? 'disabled' : ''}></td>`;
         }).join('')}</tr>`).join('')}</table></div>
       <div class="grid">
         <div><label for="people">Personnes par repas</label><input id="people" type="number" name="people" min="1" max="20" value="${esc(profile.people)}"></div>
@@ -123,6 +126,7 @@ const views = {
     const busy = ['queued', 'running'].includes(o.job?.status);
     if (busy) poll(render);
     const req = o.request || {};
+    const nMeals = o.choice?.chosen?.meals?.length || (req.slots || []).length;
     let step = '';
     if (busy) {
       step = `<div class="card"><h2 style="margin-top:0"><span class="spin"></span> ${esc(o.job.label)}${o.job.queued > 0 ? ` — en attente (${o.job.queued} avant)` : ''}</h2>
@@ -133,18 +137,35 @@ const views = {
       step = `<div class="card"><p class="err">La dernière étape a échoué.</p><div class="log">${esc(o.job.log.slice(-15).join('\n'))}</div>
         <p><button class="btn" onclick="retry('${esc(id)}')">Relancer</button></p></div>`;
     } else if (o.pick) {
-      const b = o.result.baskets.find(x => x.id === o.pick.basketId);
-      step = `<div class="card"><h2 style="margin-top:0">✅ C'est prêt</h2>
-        <p>Ton panier <b>${esc(b?.store)}</b> est rempli sur <b>${b?.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'}</b> (${eur(b?.total)}) : ouvre l'app pour vérifier et payer.</p>
-        ${o.hasPdf ? `<p><a class="btn" href="/api/orders/${esc(id)}/pdf" target="_blank">📄 Recettes + liste de courses (PDF)</a></p>` : ''}
+      const b = o.result.baskets.find(x => x.id === o.pick.basketId) || {};
+      const c = o.cart, app = b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo';
+      const status = !c ? '<p class="muted">Panier pas encore vérifié.</p>'
+        : c.unavailable?.length
+          ? `<p class="err">⚠️ ${c.unavailable.length} article(s) indisponible(s) : ${esc(c.unavailable.map(i => i.title).join(', '))}</p>`
+          : `<p>✅ Panier vérifié le ${esc(new Date(c.checkedAt).toLocaleString('fr-FR'))} : ${c.items.length} articles, tout est disponible.</p>`;
+      const r = o.repair;
+      const repair = r ? `<div class="card small" style="background:var(--bg)"><b>🔁 Remplacements faits par l'IA</b><ul>
+        ${(r.replaced || []).map(x => `<li>${esc(x.from)} → <b>${esc(x.to)}</b>${x.note ? ` <span class="muted">(${esc(x.note)})</span>` : ''}</li>`).join('')}
+        ${(r.removed || []).map(x => `<li>${esc(x.from)} retiré${x.why ? ` <span class="muted">(${esc(x.why)})</span>` : ''}</li>`).join('')}
+        ${(r.recipeChanges || []).map(x => `<li>📝 ${esc(x.when)} : ${esc(x.change)}</li>`).join('')}</ul></div>` : '';
+      const meals = (o.plan?.meals || []).filter(m => m.cost != null);
+      step = `<div class="card"><h2 style="margin-top:0">${c?.unavailable?.length ? '⚠️ Panier à vérifier' : '✅ C\'est prêt'}</h2>
+        <p>Ton panier <b>${esc(b.store)}</b> est rempli sur <b>${app}</b> : <b>${eur(c?.total ?? b.total)}</b> frais inclus. Ouvre l'app pour vérifier et payer.</p>
+        ${status}${repair}
+        ${meals.length ? `<p class="small"><b>Payé :</b> ${eur((c?.total ?? b.total) / o.plan.meals.length)} par repas en moyenne.
+          <b>Coût consommé par repas</b> (le reste va au placard) : ${meals.map(m => `${esc(m.when)} ≈ ${eur(m.cost)}`).join(' · ')}</p>` : ''}
+        <div class="row">${o.hasPdf ? `<a class="btn" href="/api/orders/${esc(id)}/pdf" target="_blank">📄 Recettes + liste de courses (PDF)</a>` : ''}
+          <button class="btn ghost" onclick="verify('${esc(id)}')">🔄 Revérifier le panier</button></div>
+        <p class="muted small">Un article peut passer en rupture entre la préparation et le paiement : « Revérifier » relit le panier,
+          fait remplacer les articles indisponibles par l'IA et met le PDF à jour. À faire juste avant de payer, ou si l'app affiche « article indisponible ».</p>
         <p class="muted small">Après les repas, note les plats dans <a href="#/plats">Mes plats</a>.</p></div>`;
     } else if (o.result) {
       step = `<div class="card"><h2 style="margin-top:0">Choisis ton panier</h2>
         ${o.result.recommendation ? `<p>💡 ${esc(o.result.recommendation)}</p>` : ''}
-        <div class="table-wrap"><table class="cmp"><tr><th>Magasin</th><th class="num">Produits</th><th class="num">Total payé</th><th>Remarques</th><th></th></tr>
+        <div class="table-wrap"><table class="cmp"><tr><th>Magasin</th><th class="num">Produits</th><th class="num">Total payé</th><th class="num" title="Total payé ÷ nombre de repas">€ / repas</th><th>Remarques</th><th></th></tr>
         ${[...o.result.baskets].sort((a, b) => a.total - b.total).map(b => `<tr class="${b.recommended ? 'reco' : ''}">
           <td><b>${esc(b.store)}</b><br><span class="muted small">${b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'}${b.eta ? ' · ' + esc(b.eta) : ''}</span>${b.recommended ? '<br><span class="badge ok">recommandé</span>' : ''}</td>
-          <td class="num">${eur(b.subtotal)}</td><td class="num"><b>${eur(b.total)}</b></td>
+          <td class="num">${eur(b.subtotal)}</td><td class="num"><b>${eur(b.total)}</b></td><td class="num">≈ ${eur(perMeal(b, nMeals))}</td>
           <td class="small">${esc(b.notes || '')}${(b.fees || []).length ? `<br><span class="muted">${b.fees.map(f => esc(f.label + ' ' + f.amount)).join(' · ')}</span>` : ''}</td>
           <td><button class="btn" onclick="pick('${esc(id)}','${esc(b.id)}')">Je prends</button></td></tr>`).join('')}
         </table></div>
@@ -229,6 +250,7 @@ const views = {
   },
 };
 
+async function verify(id) { try { await api(`/orders/${id}/verify`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
 async function retry(id) { try { await api(`/orders/${id}/retry`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
 async function pick(id, basketId) { if (!confirm('Garder ce panier et vider les autres ?')) return; try { await api(`/orders/${id}/pick`, { method: 'POST', body: { basketId } }); render(); } catch (e) { alert(e.message); } }
 async function account(p, action) { try { await api(`/accounts/${p}/${action}`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }

@@ -1,0 +1,22 @@
+{
+ "slug": "spaghetti-carbonara",
+ "title": "Spaghetti carbonara",
+ "subtitle": "œufs, parmesan, lardons croustillants — sans crème, 1 portion généreuse",
+ "time": 12, "difficulty": "Facile", "servings": 1,
+ "equipment": ["Casserole", "Poêle", "Bouilloire"],
+ "tags": ["rapide", "œufs", "rassasiant", "sans four"],
+ "ingredients": [
+  {"name": "Spaghetti", "qty": "120 g"},
+  {"name": "Lardons / pancetta", "qty": "150 g"},
+  {"name": "Œufs", "qty": "1 entier + 2 jaunes"},
+  {"name": "Parmesan", "qty": "40 g"},
+  {"name": "Poivre (beaucoup), sel", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Les pâtes", "text": "Cuis les spaghetti dans l'eau bouillante salée (bouilloire), ~9-10 min."},
+  {"title": "Les lardons", "text": "Fais dorer les lardons à sec dans une poêle 5-6 min jusqu'à ce qu'ils croustillent. Coupe le feu."},
+  {"title": "La crème d'œufs", "text": "Dans un bol, bats l'œuf, les 2 jaunes et le parmesan râpé avec beaucoup de poivre."},
+  {"title": "Assembler hors du feu", "text": "Mets les pâtes égouttées dans la poêle des lardons (feu coupé), ajoute 3 c. à soupe d'eau de cuisson puis le mélange œufs-parmesan en remuant vite : la sauce nappe sans cuire en omelette."}
+ ],
+ "tip": "Feu coupé au moment des œufs : c'est la chaleur des pâtes qui fait la sauce."
+}

@@ -1,0 +1,22 @@
+{
+ "slug": "tortellini-creme-parmesan",
+ "title": "Tortellini ricotta-épinards, crème au parmesan",
+ "subtitle": "pâtes fraîches, sauce minute — 1 grosse portion",
+ "time": 8, "difficulty": "Très facile", "servings": 1,
+ "equipment": ["Casserole", "Poêle", "Bouilloire"],
+ "tags": ["rapide", "pâtes fraîches", "crémeux", "sans four"],
+ "ingredients": [
+  {"name": "Tortellini / ravioli frais ricotta-épinards", "qty": "250 g"},
+  {"name": "Crème liquide entière", "qty": "6 cl"},
+  {"name": "Parmesan", "qty": "25 g"},
+  {"name": "Tomates cerises (facultatif)", "qty": "quelques-unes"},
+  {"name": "Sel, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Cuisson", "text": "Fais bouillir l'eau à la bouilloire, sale-la dans une casserole et plonge les tortellini 2-3 min (cf. paquet)."},
+  {"title": "Sauce", "text": "En parallèle, fais chauffer la crème dans une poêle à feu doux avec la moitié du parmesan râpé et beaucoup de poivre."},
+  {"title": "Enrober", "text": "Égoutte les tortellini et verse-les dans la poêle avec 2 c. à soupe d'eau de cuisson. Mélange 30 s."},
+  {"title": "Servir", "text": "Parsème du reste de parmesan, poivre."}
+ ],
+ "tip": "L'eau de cuisson lie la sauce : elle devient brillante au lieu d'être grasse."
+}

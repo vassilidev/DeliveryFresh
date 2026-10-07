@@ -1,0 +1,77 @@
+{
+ "slug": "spaghetti-bolognaise",
+ "title": "Spaghetti bolognaise maison",
+ "subtitle": "bœuf haché, sauce tomate mijotée, parmesan — 1 portion généreuse",
+ "time": 30,
+ "difficulty": "Facile",
+ "servings": 1,
+ "equipment": [
+  "Sauteuse ou grande poêle",
+  "Casserole",
+  "Bouilloire"
+ ],
+ "tags": [
+  "bœuf",
+  "rassasiant",
+  "classique",
+  "sans four"
+ ],
+ "ingredients": [
+  {
+   "name": "Bœuf haché 15 %",
+   "qty": "250 g"
+  },
+  {
+   "name": "Pulpe, tomates concassées ou sauce tomate",
+   "qty": "400 g"
+  },
+  {
+   "name": "Oignon",
+   "qty": "1"
+  },
+  {
+   "name": "Ail (facultatif)",
+   "qty": "1 gousse"
+  },
+  {
+   "name": "Spaghetti",
+   "qty": "120 g"
+  },
+  {
+   "name": "Parmesan",
+   "qty": "20 g"
+  },
+  {
+   "name": "Tomates cerises restantes (facultatif)",
+   "qty": "~100 g"
+  },
+  {
+   "name": "Huile, sel, poivre",
+   "qty": "",
+   "pantry": true
+  }
+ ],
+ "steps": [
+  {
+   "title": "Les aromates",
+   "text": "Émince finement l'oignon et l'ail. Fais-les fondre 4 min dans un filet d'huile à feu moyen."
+  },
+  {
+   "title": "La viande",
+   "text": "Monte le feu, ajoute le bœuf, laisse-le colorer 2 min sans toucher puis émiette-le et fais-le dorer 3 min. Sale, poivre."
+  },
+  {
+   "title": "Mijoter",
+   "text": "Verse la pulpe de tomates (ou la sauce tomate : elle est déjà cuisinée, 10 min de mijotage suffisent) et les tomates cerises restantes coupées en deux, un fond d'eau, couvre à moitié et laisse mijoter 15-20 min à feu doux."
+  },
+  {
+   "title": "Les pâtes",
+   "text": "10 min avant la fin, cuis les spaghetti dans l'eau bouillante salée (bouilloire). Égoutte en gardant un peu d'eau."
+  },
+  {
+   "title": "Servir",
+   "text": "Mélange les pâtes dans la sauce 1 min avec un peu d'eau de cuisson, puis râpe le parmesan par-dessus."
+  }
+ ],
+ "tip": "Laisser le bœuf colorer sans le remuer au début donne tout le goût à la sauce."
+}

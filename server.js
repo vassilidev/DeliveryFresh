@@ -66,6 +66,13 @@ function spawnLogged(job, cmd, args, onLine) {
 
 const node = (job, ...args) => spawnLogged(job, process.execPath, args, l => say(job, l.slice(0, 300)));
 
+// Lance un outil et renvoie sa sortie JSON (les lignes ne vont pas dans le journal).
+async function nodeJson(job, ...args) {
+  let out = '';
+  await spawnLogged(job, process.execPath, args, l => { out += l + '\n'; });
+  return JSON.parse(out);
+}
+
 // Claude Code en arrière-plan, avec suivi des étapes (outils lancés, messages).
 function claude(job, prompt) {
   let result = null;
@@ -94,6 +101,65 @@ const P_BASKETS = id => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mod
 Demande : orders/${id}/request.json, menus : orders/${id}/menus.json, choix de l'utilisateur : orders/${id}/choice.json.
 Fais toute la suite jusqu'aux totaux réels de 4 à 6 paniers remplis, puis écris orders/${id}/result.json.
 Ne vide aucun panier, ne génère pas le PDF, ne passe jamais commande.`;
+
+const P_REPAIR = (id, b, cart) => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mode web », réparation) et knowledge/.
+Le panier choisi « ${b.id} » (${b.platform}, cartRef ${b.cartRef}) contient des articles devenus indisponibles, refusés au paiement :
+${cart.unavailable.map(i => `- ${i.title} (${i.cartItemUuid || i.legacyId})`).join('\n')}
+Remplace-les par des équivalents vérifiés, adapte recettes/plan si besoin, mets à jour le panier « ${b.id} » de result.json
+(perMeal, subtotal, total) et écris orders/${id}/repair.json. Ne passe jamais commande, ne touche à aucun autre panier.`;
+
+function chosenBasket(dir) {
+  const result = readJson(path.join(dir, 'result.json')), pick = readJson(path.join(dir, 'pick.json'));
+  const b = result?.baskets?.find(x => x.id === pick?.basketId);
+  if (!b) throw new Error('Aucun panier choisi');
+  if (!b.cartRef) throw new Error('Panier sans référence (cartRef) : impossible de le vérifier');
+  return b;
+}
+
+const verifyCart = async (job, b) => nodeJson(job, `tools/${b.platform === 'ubereats' ? 'ubereats' : 'deliveroo'}.js`, 'verify', b.cartRef);
+
+// PDF : liste de courses = contenu RÉEL du panier (cart.json), prix par repas = perMeal du panier choisi.
+async function buildPdf(job, id) {
+  const dir = orderDir(id);
+  const plan = readJson(path.join(dir, 'plan.json'));
+  if (!plan) return;
+  const b = chosenBasket(dir), cart = readJson(path.join(dir, 'cart.json'));
+  const items = cart?.items || readJson(path.join(ROOT, b.basketFile))?.items || [];
+  plan.shopping = items.filter(i => !i.unavailable).map(i => ({ name: i.title, qty: i.grams ? `${Math.round(i.grams)} g` : `× ${i.qty || 1}`, price: i.cost ?? i.price }));
+  const total = cart?.total ?? b.total, subtotal = cart?.subtotal ?? b.subtotal;
+  plan.shoppingNote = `${b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'} · ${b.store} — produits ${subtotal?.toFixed(2)} € · total ${total?.toFixed(2)} € (frais inclus)${cart ? ` · panier vérifié le ${new Date(cart.checkedAt).toLocaleString('fr-FR')}` : ''}.`;
+  for (const m of plan.meals) { const pm = (b.perMeal || []).find(x => x.when === m.when); if (pm) m.cost = pm.cost; }
+  plan.people = readJson(path.join(dir, 'request.json'))?.people;
+  plan.paid = total;
+  writeJson(path.join(dir, 'plan.json'), plan);
+  say(job, '📄 Génération du PDF des recettes');
+  await recipes.pdf(path.join(dir, 'plan.json'), path.join(dir, 'recettes.pdf'));
+}
+
+// Vérifie le panier choisi ; si des articles sont en rupture, l'IA les remplace, puis on revérifie. PDF mis à jour.
+async function checkAndRepair(job, id) {
+  const dir = orderDir(id);
+  let b = chosenBasket(dir);
+  say(job, `🔎 Vérification du panier ${b.store}`);
+  let cart = await verifyCart(job, b);
+  writeJson(path.join(dir, 'cart.json'), cart);
+  if (cart.unavailable.length) {
+    say(job, `⚠️ ${cart.unavailable.length} article(s) indisponible(s) : ${cart.unavailable.map(i => i.title).join(', ')}`);
+    fs.rmSync(path.join(dir, 'repair.json'), { force: true });
+    await claude(job, P_REPAIR(id, b, cart));
+    b = chosenBasket(dir);
+    say(job, '🔎 Nouvelle vérification');
+    cart = await verifyCart(job, b);
+    writeJson(path.join(dir, 'cart.json'), cart);
+    if (cart.unavailable.length) say(job, `⚠️ Toujours indisponible : ${cart.unavailable.map(i => i.title).join(', ')}`);
+  } else say(job, `✅ Tout est disponible — total ${cart.total?.toFixed(2)} €`);
+  await buildPdf(job, id);
+}
+
+function startVerify(id) {
+  orderDir(id);
+  return enqueue(id, 'Vérification du panier', job => checkAndRepair(job, id));
+}
 
 function startMenus(id, again = false) {
   const dir = orderDir(id);
@@ -124,16 +190,8 @@ function startPick(id, basketId) {
       say(job, `🧹 Vidage du panier ${b.platform} · ${b.store}`);
       await node(job, `tools/${b.platform === 'ubereats' ? 'ubereats' : 'deliveroo'}.js`, 'clear', b.cartRef);
     }
-    const plan = readJson(path.join(dir, 'plan.json'));
-    if (plan) {
-      const basket = readJson(path.join(ROOT, chosen.basketFile)) || { items: [] };
-      plan.shopping = basket.items.map(i => ({ name: i.title, qty: i.grams ? `${i.grams} g` : `× ${i.qty || 1}`, price: i.cost ?? i.price }));
-      plan.shoppingNote = `${chosen.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'} · ${chosen.store} — produits ${chosen.subtotal?.toFixed(2)} € · total ${chosen.total?.toFixed(2)} € (frais inclus).`;
-      writeJson(path.join(dir, 'plan.json'), plan);
-      say(job, '📄 Génération du PDF des recettes');
-      await recipes.pdf(path.join(dir, 'plan.json'), path.join(dir, 'recettes.pdf'));
-    }
     writeJson(path.join(dir, 'pick.json'), { basketId, at: new Date().toISOString() });
+    await checkAndRepair(job, id);
   });
 }
 
@@ -144,7 +202,7 @@ function orderView(id) {
   const job = [...jobs].reverse().find(j => j.orderId === id);
   return {
     id, request: f('request.json'), menus: f('menus.json'), choice: f('choice.json'), result: f('result.json'),
-    plan: f('plan.json'), pick: f('pick.json'), hasPdf: fs.existsSync(path.join(dir, 'recettes.pdf')),
+    plan: f('plan.json'), pick: f('pick.json'), cart: f('cart.json'), repair: f('repair.json'), hasPdf: fs.existsSync(path.join(dir, 'recettes.pdf')),
     job: job && { label: job.label, status: job.status, log: job.log.slice(-60), queued: jobs.filter(j => j.status === 'queued').indexOf(job) },
   };
 }
@@ -244,10 +302,18 @@ const routes = [
     choice.chosen ? startBaskets(id) : startMenus(id, true);
     send(res, 200, choice);
   }],
+  ['POST', /^\/api\/orders\/([\w-]+)\/verify$/, (req, res, id) => {
+    const v = orderView(id);
+    if (['queued', 'running'].includes(v.job?.status)) throw Object.assign(new Error('Déjà en cours'), { status: 409 });
+    if (!v.pick) throw Object.assign(new Error('Aucun panier choisi'), { status: 400 });
+    startVerify(id);
+    send(res, 202, {});
+  }],
   ['POST', /^\/api\/orders\/([\w-]+)\/retry$/, (req, res, id) => {
     const v = orderView(id);
     if (['queued', 'running'].includes(v.job?.status)) throw Object.assign(new Error('Déjà en cours'), { status: 409 });
-    v.choice?.chosen && !v.result ? startBaskets(id) : startMenus(id, !!v.choice);
+    if (v.pick) startVerify(id);
+    else v.choice?.chosen && !v.result ? startBaskets(id) : startMenus(id, !!v.choice);
     send(res, 202, {});
   }],
   ['POST', /^\/api\/orders\/([\w-]+)\/pick$/, async (req, res, id) => { startPick(id, (await readBody(req)).basketId); send(res, 202, {}); }],
@@ -284,4 +350,4 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) server.listen(PORT, HOST, () => console.log(`DeliveryFresh : http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`));
 
-module.exports = { cleanProfile, cleanRequest };
+module.exports = { cleanProfile, cleanRequest, buildPdf };

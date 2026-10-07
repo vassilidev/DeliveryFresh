@@ -4,7 +4,10 @@
 - Les frais (livraison, service, petite commande, remises d'abonnement) n'apparaissent qu'au récapitulatif de paiement :
   comparer sur le **total final**, jamais sur le sous-total. (2026-10-07)
 - Navigateur : Chrome visible + profil persistant (`.session/<plateforme>`). En headless, Cloudflare bloque Uber Eats. (2026-10-07)
-- Un profil Chrome ne peut être ouvert que par un process à la fois : fermer la fenêtre de login avant de lancer un outil. (2026-10-07)
+- Un profil Chrome ne peut être ouvert que par un process à la fois → un Chrome partagé par plateforme, lancé hors écran
+  (`open -g -n` sur macOS = pas de vol de focus), auquel les outils se connectent en CDP : ~0,7 s au lieu de ~5 s par appel. (2026-10-07)
+- Un Chrome lancé hors Playwright doit avoir `--use-mock-keychain --password-store=basic` (comme Playwright), sinon il ne
+  peut pas déchiffrer les cookies et **efface la session** (vécu : reconnexion Uber Eats nécessaire). (2026-10-07)
 - Le match par mot-clé ramène n'importe quoi (pâtée pour chat « filets de poulet », shampooing « aux œufs », chips « poivron ») :
   toujours relire les choix. (2026-10-07)
 - Une requête vide ne veut pas dire « absent » : « oeufs frais » ne trouvait rien chez Auchan/Deliveroo, « oeufs » si. (2026-10-07)
@@ -19,6 +22,10 @@
   (oignon 150 g, poivron 200 g, tomate 120 g, ail 100 g chez Intermarché). Facturé au poids réel. (2026-10-07)
 - Frais observés avec Uber One : service 3,99 € moins « avantage abonnement », livraison offerte ; < 18 € : +3 € petite commande. (2026-10-07)
 - Erreurs réseau passagères (« upstream connect error ») : réessayer. (2026-10-07)
+- **La recherche ne garantit pas le stock** : un article « disponible » en recherche peut être refusé au panier
+  (ruptures fréquentes chez Carrefour République : pâtes fraîches, conserves de tomates). Dans le panier, un article
+  indisponible apparaît avec `price: 0` (et « Cet article est indisponible » au checkout) : après remplissage, relire
+  le panier et remplacer tout article à 0 € par un équivalent vérifié. (2026-10-07)
 - `discardDraftOrdersV1` refuse nos payloads : pour vider, retirer tous les articles (`removeItemsFromDraftOrderV2`). (2026-10-07)
 
 ## Deliveroo
@@ -34,3 +41,17 @@
   ou le prix/kg de la description. (2026-10-07)
 - Prix souvent un peu plus élevés que sur Uber pour le même magasin ; frais ≈ +2,49 € sur un panier ~50 €. (2026-10-07)
 - La collection « courses » n'inclut pas tous les commerces (Carrefour City absent mais livrable). (2026-10-07)
+- Deliveroo : le prix de `search` est le prix **promo** ; dans le panier `unit_price` (et `subtotalBeforeDiscounts`) est le prix
+  avant promo. Seul « Total de la commande » fait foi (promos + frais inclus) ; frais = total − Σ prix de recherche ≈ 2,49 €. (2026-10-07)
+- Deliveroo : le pied de panier ne détaille plus les frais (une seule ligne « Total de la commande »). (2026-10-07)
+- Deliveroo : « crème liquide » ramène du savon (crème lavante) chez Auchan / rien chez Carrefour City → chercher « crème fraîche ». (2026-10-07)
+- « saucisse » ramène surtout des plats cuisinés (lentilles, haricots) → chercher « saucisse de toulouse ». (2026-10-07)
+- basket.js compare les titres à l'identique : copier le titre du cache, coquilles comprises (« Parmarreggio » chez Intermarché). (2026-10-07)
+
+## Magasins (Lyon 2e)
+- Intermarché Express Tronchet (Uber) : ni tomates cerises (→ tomate grappe au poids), ni basilic frais, ni vraie burrata
+  (→ stracciatella Casa Azzurra 150 g). Bœuf haché seulement en 350-400 g. (2026-10-07)
+- Carrefour République (Uber) : steaks hachés 15 % « (2) » = 250 g, saucisses de Toulouse Filière Qualité 250 g, burrata 290 g,
+  basilic frais : bon magasin pour cuisiner pour 1. (2026-10-07)
+- Carrefour City République (Deliveroo) : pas de tortellini ricotta-épinards (seulement Rana speck). Monoprix (Uber/Deliveroo) :
+  pas de viande hachée en barquette correcte → steaks façon bouchère 2×125 g. U Express Ainay (Uber) : pas de burrata. (2026-10-07)

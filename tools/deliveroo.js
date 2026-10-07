@@ -6,6 +6,8 @@
 //   fill <basket.json>             ajoute les articles (basket = { menuPath, items: [résultat de search + qty] })
 //   qty <menuPath> <legacyId> <qté> change la quantité (0 = supprimer)
 //   clear <menuPath|all>           vide le panier du commerce (all = tous les paniers en cours)
+//   verify <menuPath>              relit le panier et re-contrôle la disponibilité de chaque article dans le catalogue
+//   (fill affiche directement le résultat de verify)
 const fs = require('fs');
 const path = require('path');
 const { open, SESSION_DIR } = require('./browser');
@@ -86,7 +88,15 @@ async function stores({ page, loc }) {
   return paths.filter(p => GROCERY.test(p)).map(p => ({ menuPath: p, url: BASE + '/fr' + p }));
 }
 
+// Infos d'un commerce, mises en cache le temps du process (évite de recharger sa page à chaque opération).
+const storeCache = new Map();
 async function storeInfo(page, menuPath, loc) {
+  const key = menuPath.toLowerCase();
+  if (!storeCache.has(key)) storeCache.set(key, loadStoreInfo(page, menuPath, loc).catch(e => { storeCache.delete(key); throw e; }));
+  return storeCache.get(key);
+}
+
+async function loadStoreInfo(page, menuPath, loc) {
   await page.goto(`${BASE}/fr${menuPath}?geohash=${loc.geohash}`, { waitUntil: 'domcontentloaded' });
   const r = nextData(await page.content()).props.initialState.menuPage.menu.metas.root.restaurant;
   return { name: r.name, restaurantId: r.id, menuId: r.menuId, drnId: r.drnId, deliversHere: r.deliversToCustomerLocation, menuDisabled: r.menuDisabled };
@@ -96,7 +106,8 @@ const SEARCH_Q = `query s($options: SearchOptionsInput!) { result: get_search_re
   layouts: ui_layouts { ... on UILayoutList { ui_blocks { ... on UIMenuItemCard { properties { id } } } } }
   meta { items { id drn_id name description price { fractional } price_discounted { fractional } available } } } }`;
 
-async function search({ page, gql, loc }, menuPath, queries) {
+// all = true : garde aussi les articles indisponibles (champ available), pour verify.
+async function search({ page, gql, loc }, menuPath, queries, { all = false } = {}) {
   const st = await storeInfo(page, menuPath, loc);
   const res = { store: st.name, menuPath, ...st, results: {} };
   for (const q of queries) {
@@ -108,7 +119,8 @@ async function search({ page, gql, loc }, menuPath, queries) {
     } });
     const byId = Object.fromEntries(d.result.meta.items.map(i => [i.id, i]));
     const ids = d.result.layouts.flatMap(l => l.ui_blocks || []).map(b => b.properties?.id).filter(Boolean);
-    res.results[q] = ids.map(id => byId[id]).filter(i => i?.available).slice(0, 15).map(i => ({
+    res.results[q] = ids.map(id => byId[id]).filter(i => i && (all || i.available)).slice(0, 15).map(i => ({
+      available: i.available,
       itemId: i.id, drnId: i.drn_id, title: i.name, price: (i.price_discounted || i.price).fractional / 100,
       perKg: (i.description || '').match(/^[\d.,]+ € \/ \w+/)?.[0],
     }));
@@ -143,7 +155,7 @@ async function basket(s, menuPath) {
     options: basketOptions(s.loc, st.drnId), include_token: true,
     capabilities: { ui_list_components: ['UI_BUTTON_GROUP'], ui_action_types: ['REFRESH_BASKET'], ui_icons: [] },
   })).get_basket_page;
-  const items = d.meta.basket.items.map(i => ({ legacyId: i.legacyId, title: i.name, qty: i.quantity, unitPrice: i.unitPriceFractional / 100 }));
+  const items = d.meta.basket.items.map(i => ({ legacyId: i.legacyId, drnId: i.menuItemDrnId, title: i.name, qty: i.quantity, unitPrice: i.unitPriceFractional / 100 }));
   const lines = rows(d.footer);
   const eur = t => +(t || '').replace(/[^\d,]/g, '').replace(',', '.') || null;
   return {
@@ -194,7 +206,24 @@ async function clear(s, menuPath) {
   return basket(s, menuPath);
 }
 
-module.exports = { session, stores, search, storeInfo, basket, fill, setQty, clear, clearAll };
+// Le panier Deliveroo n'indique pas les ruptures : on recherche chaque article dans le catalogue du commerce.
+// Article non retrouvé par la recherche = "unverified" (statut inconnu, pas une rupture). Par défaut Deliveroo
+// remplace lui-même un article manquant (backup ALLOW_PARTNER_SUBSTITUTIONS).
+async function verify(s, menuPath) {
+  const b = await basket(s, menuPath);
+  const queries = b.items.map(i => i.title.split(/ - | {2}/)[0].slice(0, 60));
+  const found = (await search(s, menuPath, [...new Set(queries)], { all: true })).results;
+  const items = b.items.map((i, k) => {
+    const hit = (found[queries[k]] || []).find(x => x.drnId === i.drnId);
+    return { legacyId: i.legacyId, title: i.title, qty: i.qty, cost: +(i.unitPrice * i.qty).toFixed(2), unavailable: hit ? !hit.available : false, unverified: !hit };
+  });
+  return {
+    platform: 'deliveroo', cartRef: menuPath, store: b.store, checkedAt: new Date().toISOString(),
+    items, unavailable: items.filter(i => i.unavailable), subtotal: b.subtotal, total: b.total, lines: b.lines,
+  };
+}
+
+module.exports = { session, stores, search, storeInfo, basket, fill, setQty, clear, clearAll, verify };
 
 if (require.main === module) {
   (async () => {
@@ -205,7 +234,8 @@ if (require.main === module) {
         stores: () => stores(s),
         search: () => search(s, args[0], args.slice(1)),
         basket: () => basket(s, args[0]),
-        fill: () => fill(s, JSON.parse(fs.readFileSync(args[0], 'utf8'))),
+        fill: async () => { const b = JSON.parse(fs.readFileSync(args[0], 'utf8')); await fill(s, b); return verify(s, b.menuPath); },
+        verify: () => verify(s, args[0]),
         qty: () => setQty(s, args[0], args[1], args[2]),
         clear: () => args[0] === 'all' ? clearAll(s) : clear(s, args[0]),
       }[cmd];

@@ -54,9 +54,17 @@ Pour arrêter l'app : `Ctrl + C` dans le terminal.
    Si tu ne prends aucun menu, l'IA en propose de nouveaux en tenant compte de tes refus.
 4. **Attends 5 à 15 min** : l'IA cherche les produits dans 4 à 6 magasins, choisit les bons formats
    et les bonnes quantités, remplit chaque panier et lit le **total réel au paiement**.
-5. **Choisis ton panier** dans le tableau comparatif (le recommandé est surligné). Clique sur **Je prends** :
-   l'app garde ce panier, vide les autres et génère le **PDF des recettes** (liste de courses + une fiche par repas).
-6. **Paie dans l'app** Uber Eats ou Deliveroo : ton panier y est déjà prêt.
+5. **Choisis ton panier** dans le tableau comparatif : total payé, **prix par repas**, remarques ; le recommandé est
+   surligné. Clique sur **Je prends** : l'app garde ce panier, vide les autres, **vérifie le stock réel**, fait
+   remplacer par l'IA les articles devenus indisponibles et génère le **PDF des recettes** (liste de courses + une fiche
+   par repas avec son coût).
+6. **Juste avant de payer**, clique sur **🔄 Revérifier le panier** : un article peut passer en rupture entre-temps
+   (c'est fréquent dans les petits magasins). L'app relit le panier, remplace ce qui manque, adapte les recettes si besoin
+   et met le PDF à jour. Les remplacements sont listés sur la page.
+7. **Paie dans l'app** Uber Eats ou Deliveroo : ton panier y est déjà prêt.
+
+> **Prix par repas** : « payé » = total ÷ nombre de repas (pour comparer les paniers) ; « consommé » = ce que chaque
+> repas utilise vraiment (le reste — fond de pesto, œufs… — va au placard pour la suite).
 
 ## 5. Après les repas : « Mes plats »
 
@@ -64,14 +72,20 @@ Pour chaque recette : donne des **étoiles**, écris une remarque (« un peu fad
 **Faite aujourd'hui**. L'IA s'en sert ensuite : elle repropose ce que tu as aimé et évite le reste.
 Les menus mis de côté (« Plus tard ») sont listés en haut de la page.
 
-## 6. Comment l'IA est utilisée
+## 6. Chrome en arrière-plan
+
+Pendant les recherches, l'app utilise un Chrome **caché, hors de l'écran**, qui ne prend pas le focus : tu peux
+continuer à utiliser ton ordinateur. Il reste ouvert entre deux étapes (c'est ce qui rend tout plus rapide) et se ferme
+seul après 10 minutes sans usage. Seule la **connexion** ouvre une fenêtre visible.
+
+## 7. Comment l'IA est utilisée
 
 L'app lance **Claude Code en arrière-plan** (`claude -p`), avec **ton compte Claude** : il n'y a pas de clé API
 à configurer, et la consommation est décomptée sur ton abonnement. L'IA n'intervient qu'à **deux moments** :
-proposer les menus, puis composer et comparer les paniers. Le profil, les connexions, le choix du panier,
+proposer les menus, puis composer et comparer les paniers — et, si besoin, remplacer des articles en rupture. Le profil, les connexions, le choix du panier,
 le PDF et les notes n'en consomment pas.
 
-## 7. Tes données
+## 8. Tes données
 
 Restent uniquement sur ton Mac (jamais publiées sur GitHub) :
 - `profile.json` : ton profil ;
@@ -86,7 +100,7 @@ Ce qui est partagé, et s'améliore avec l'usage :
 L'app n'est accessible que depuis ton Mac. Le lancer avec `HOST=0.0.0.0 npm start` l'ouvre au Wi-Fi
 (téléphone), **sans mot de passe** : à éviter sur un réseau partagé.
 
-## 8. Dépannage
+## 9. Dépannage
 
 | Problème | Solution |
 |---|---|
@@ -94,10 +108,12 @@ L'app n'est accessible que depuis ton Mac. Le lancer avec `HOST=0.0.0.0 npm star
 | Une étape a échoué | bouton **Relancer** sur la commande ; le détail de l'erreur est affiché |
 | Frais bizarres, produits non trouvés | session expirée : **Comptes → Se connecter** |
 | Une tâche reste « en attente » | une seule tâche tourne à la fois (une fenêtre de connexion encore ouverte bloque la file : ferme-la) |
+| « Article indisponible » au paiement | **🔄 Revérifier le panier** sur la page de la commande |
+| Un Chrome caché semble bloqué | `node tools/browser.js stop`, puis relance l'étape |
 | Changement d'adresse | modifie-la dans **Profil**, elle est prise en compte automatiquement |
 | Un outil casse du jour au lendemain | les sites ont changé leur fonctionnement interne : ouvre `claude` dans le dossier et demande de réparer l'outil |
 
-## 9. Mode avancé (terminal)
+## 10. Mode avancé (terminal)
 
 Tout reste faisable sans l'interface : lance `claude` dans le dossier et parle-lui (il suit `CLAUDE.md`).
 Commandes directes :

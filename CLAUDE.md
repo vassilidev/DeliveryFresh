@@ -42,8 +42,10 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
    - qualité correcte (marque distributeur OK, éviter premier prix douteux sur la viande) ;
    - substitutions intelligentes si absent (dinde ↔ poulet, tomates pelées ↔ concassées, paprika+cumin ↔ mix chili) ;
    - produits au poids (Uber, `byWeight`) : donne `grams` ; homonymes (Deliveroo) : précise `price`.
-6. **Frais réels** : les frais n'apparaissent qu'au paiement → remplis chaque panier et lis le total :
-   `node tools/ubereats.js fill <basket.json>` / `node tools/deliveroo.js fill <basket.json>`.
+6. **Frais réels + stock réel** : les frais n'apparaissent qu'au paiement → remplis chaque panier :
+   `node tools/ubereats.js fill <basket.json>` / `node tools/deliveroo.js fill <basket.json>`. La sortie est celle de
+   `verify` (total, frais, `unavailable`). **La recherche peut montrer en stock un article en rupture** : tout article de
+   `unavailable` doit être remplacé (retirer, essayer un autre candidat, revérifier) avant de présenter le panier.
 7. **Présente** un tableau (produits, frais, total, qualité, manques/substitutions) + ta recommandation.
 8. **Ne valide JAMAIS une commande / un paiement** : l'utilisateur paie lui-même dans l'app.
    Après son choix, vide les paniers perdants **que tu as créés** (`clear <id>`). Ne touche jamais aux paniers
@@ -71,10 +73,24 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
     "baskets": [{ "id": "ue-intermarche", "platform": "ubereats", "store": "Intermarché Tronchet",
       "basketFile": "orders/<id>/baskets/ue-intermarche.json", "cartRef": "<draftUuid | menuPath>",
       "subtotal": 43.06, "total": 45.33, "fees": [{ "label": "Frais de service", "amount": "3,99 €" }],
-      "eta": "15-30 min", "notes": "substitutions, manques, qualité", "recommended": true }] }
+      "eta": "15-30 min", "notes": "substitutions, manques, qualité", "recommended": true,
+      "perMeal": [{ "when": "Mercredi 7 oct. soir", "cost": 4.85 }] }] }
   ```
+  `perMeal` (obligatoire, un par repas du plan, `when` identique au plan) : coût des ingrédients **consommés** par ce repas
+  pour toutes les personnes, au prorata (150 g sur une barquette de 300 g = moitié du prix ; épices/sauces réparties
+  sur leurs utilisations ; restes du soir comptés dans le repas du lendemain qui les mange ; frais de livraison répartis à parts égales).
   `cartRef` sert au serveur à vider les paniers non retenus : il doit être exact.
 - Ne génère pas le PDF et ne vide aucun panier : le serveur s'en charge quand l'utilisateur choisit.
+- Étape **réparation** (panier choisi, articles devenus indisponibles listés dans le prompt) :
+  1. retire chaque article (`ubereats.js remove <draftUuid> <cartItemUuid>` / `deliveroo.js qty <menuPath> <legacyId> 0`) ;
+  2. cherche des équivalents (`search`), ajoute-en un via un basket JSON temporaire + `fill` ; s'il ressort dans
+     `unavailable`, retire-le et essaie le suivant (2-4 candidats, en élargissant : autre marque, autre format, autre forme
+     du produit — ex. pulpe → pelées → sauce tomate) ;
+  3. si rien ne convient : adapte la recette avec ce qui est déjà dans le panier (restes, autre ingrédient) et mets à
+     jour `recipes/` (nouveau slug si la recette change vraiment) + `plan.json` — jamais d'ingrédient absent du panier ;
+     un ingrédient purement décoratif peut simplement être retiré ;
+  4. mets à jour dans `result.json` le panier choisi (`perMeal`, `subtotal`, `total` d'après le dernier `verify`) ;
+  5. écris `repair.json` : `{ "replaced": [{ "from", "to", "note" }], "removed": [{ "from", "why" }], "recipeChanges": [{ "when", "change" }] }`.
 - Termine quand même par la mise à jour de `knowledge/` si tu as appris quelque chose.
 
 ## Outils (`tools/`, sorties JSON)
@@ -82,8 +98,8 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
 |---|---|
 | `server.js` (racine) | interface web (`npm start`) : profil, comptes, commandes, choix, notes ; t'appelle en mode web |
 | `login.js <ubereats\|deliveroo>` | ouvre Chrome, l'utilisateur se connecte, session gardée dans `.session/` |
-| `ubereats.js` | `stores`, `search`, `carts`, `fill`, `qty`, `remove`, `clear <id\|all>`, `checkout` |
-| `deliveroo.js` | `stores`, `search`, `basket`, `fill`, `qty`, `clear <menuPath\|all>` |
+| `ubereats.js` | `stores`, `search`, `carts`, `fill`, `verify`, `qty`, `remove`, `clear <id\|all>`, `checkout` |
+| `deliveroo.js` | `stores`, `search`, `basket`, `fill`, `verify`, `qty`, `clear <menuPath\|all>` |
 | `compare.js` | pré-tri multi-magasins avec cache |
 | `basket.js` | résout les choix de l'agent (titre ± prix, qty/grams) en panier exact |
 | `menus.js` | `choose` (page HTML de choix entre 2-3 menus), `later` (menus mis de côté), `history` |
@@ -91,4 +107,5 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
 | `check.js` | auto-tests hors-ligne de la logique (`npm run check`) |
 
 Fichiers privés (ignorés par git) : `profile.json`, `.session/`, `memory/`, `orders/`.
-`SESSION=probe` devant une commande = profil navigateur alternatif (si une fenêtre de login est ouverte).
+Chrome tourne caché (hors écran) et partagé entre les outils ; `node tools/browser.js stop` le ferme.
+`SESSION=probe` devant une commande = profil navigateur alternatif (tests).

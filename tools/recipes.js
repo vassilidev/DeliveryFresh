@@ -35,6 +35,7 @@ function list() {
   });
 }
 
+const euro = n => n.toFixed(2).replace('.', ',') + ' €';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function html(plan) {
@@ -43,7 +44,7 @@ function html(plan) {
     return `<section class="card">
   <header><div class="when">${esc(m.when)}</div><div class="num">${i + 1}</div>
     <h1>${esc(r.title)}</h1><p class="sub">${esc(r.subtitle)}</p>
-    <div class="badges"><span>⏱ ${r.time} min</span><span>${esc(r.difficulty)}</span><span>🍽 ${r.servings} portion${r.servings > 1 ? 's' : ''}</span><span>${esc(r.equipment.join(' · '))}</span></div>
+    <div class="badges">${m.cost != null ? `<span>≈ ${euro(m.cost)} le repas${plan.people > 1 ? ` · ${euro(m.cost / plan.people)}/pers.` : ''}</span>` : ''}<span>⏱ ${r.time} min</span><span>${esc(r.difficulty)}</span><span>🍽 ${r.servings} portion${r.servings > 1 ? 's' : ''}</span><span>${esc(r.equipment.join(' · '))}</span></div>
   </header>
   <div class="body">
     <aside><h2>Ingrédients</h2><ul>${r.ingredients.map(x => `<li class="${x.pantry ? 'pantry' : ''}"><b>${esc(x.qty)}</b> ${esc(x.name)}</li>`).join('')}</ul></aside>
@@ -52,8 +53,9 @@ function html(plan) {
   ${r.tip ? `<div class="tip"><b>Astuce</b> ${esc(r.tip)}</div>` : ''}
 </section>`;
   };
+  const costs = plan.meals.map(m => m.cost).filter(c => c != null);
   const shopping = plan.shopping?.length ? `<section class="card"><header><div class="when">Courses</div><h1>${esc(plan.title)}</h1>
-    <p class="sub">${esc(plan.shoppingNote || '')}</p></header><div class="body"><ul class="shop">${plan.shopping.map(s => `<li><span>☐ ${esc(s.name)}</span><span>${esc(s.qty || '')}</span><span>${s.price != null ? s.price.toFixed(2).replace('.', ',') + ' €' : ''}</span></li>`).join('')}</ul></div></section>` : '';
+    <p class="sub">${esc(plan.shoppingNote || '')}</p>${plan.paid != null && plan.meals.length ? `<div class="badges"><span>${euro(plan.paid / plan.meals.length)} payés par repas</span>${costs.length ? `<span>≈ ${euro(costs.reduce((a, b) => a + b, 0) / costs.length)} réellement consommés par repas (le reste va au placard)</span>` : ''}</div>` : ''}</header><div class="body"><ul class="shop">${plan.shopping.map(s => `<li><span>☐ ${esc(s.name)}</span><span>${esc(s.qty || '')}</span><span>${s.price != null ? s.price.toFixed(2).replace('.', ',') + ' €' : ''}</span></li>`).join('')}</ul></div></section>` : '';
   return `<!doctype html><html lang="fr"><meta charset="utf-8"><style>
 @page { size: A4; margin: 0 }
 * { box-sizing: border-box } body { margin: 0; font: 11pt/1.45 -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1f2a1f }
