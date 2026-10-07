@@ -21,77 +21,93 @@ function later(h = load()) {
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // opts.postUrl : la page envoie le choix au serveur web (sinon : window.submitChoice exposé par Playwright).
+// Même feuille de style que l'interface web (web/style.css, incluse dans la page pour marcher aussi hors serveur).
+const CSS = path.join(__dirname, '..', 'web', 'style.css');
+const X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+
 function html(m, opts = {}) {
-  const card = o => `<article class="card" data-id="${esc(o.id)}">
-  <header><span class="id">${esc(o.id)}</span><div><h2>${esc(o.name)}</h2><p>${esc(o.pitch)}</p></div>
-    <div class="meta">${o.estimate ? `<b>${esc(o.estimate)}</b>` : ''}${(o.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div></header>
-  <ul class="meals">${o.meals.map((x, i) => `<li><label><input type="checkbox" class="nomeal" data-i="${i}"><span class="x" title="Je ne veux pas ce plat">✕</span></label>
-    <div><small>${esc(x.when)}${x.time ? ` · ${x.time} min` : ''}</small><strong>${esc(x.title)}</strong><p>${esc(x.desc)}</p></div></li>`).join('')}</ul>
-  <div class="actions" role="radiogroup" aria-label="Décision pour ${esc(o.name)}">
-    <button type="button" data-d="chosen">✅ Je prends</button>
-    <button type="button" data-d="rejected">👎 Pas pour moi</button>
-    <button type="button" data-d="later">⏰ Plus tard</button>
+  const card = o => `<article class="menu" data-id="${esc(o.id)}" data-name="${esc(o.name)}">
+  <span class="letter" aria-hidden="true">${esc(o.id)}</span>
+  ${o.estimate ? `<span class="price">${esc(o.estimate)}</span>` : ''}
+  <div><h2>${esc(o.name)}</h2><p class="pitch">${esc(o.pitch)}</p>
+    ${(o.tags || []).length ? `<div class="tags">${o.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}</div>
+  <ul class="meals">${o.meals.map((x, i) => `<li><div><span class="when">${esc(x.when)}</span><strong>${esc(x.title)}</strong>
+      <p>${esc(x.desc)}${x.time ? `, ${x.time} min` : ''}</p><span class="swap">L'IA le remplacera</span></div>
+    <label class="drop" title="Pas ce plat"><input type="checkbox" class="nomeal" data-i="${i}" aria-label="Retirer « ${esc(x.title)} »">${X}</label></li>`).join('')}</ul>
+  <div class="decide" role="group" aria-label="Décision pour ${esc(o.name)}">
+    <button type="button" class="btn" data-d="chosen" aria-pressed="false">Choisir ce menu</button>
+    <button type="button" class="btn ghost" data-d="later" aria-pressed="false" title="Le garder pour une autre fois">Plus tard</button>
+    <button type="button" class="btn ghost" data-d="rejected" aria-pressed="false" title="Ne plus me le proposer">Non</button>
   </div>
-  <textarea placeholder="Remarque (optionnel) : ex. moins épicé, remplacer le poulet par du bœuf…"></textarea>
+  <details class="more"><summary>Ajouter une remarque</summary>
+    <textarea style="margin-top:8px" placeholder="Moins épicé, du bœuf plutôt que du poulet…" aria-label="Remarque sur ${esc(o.name)}"></textarea></details>
 </article>`;
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choix du menu</title><style>
-:root { --g: #91c11e; --gd: #4d7a00; --bg: #f6f7f2; --card: #fff; --tx: #1f2a1f; --mu: #6b756b; --bd: #e3e8d8 }
-@media (prefers-color-scheme: dark) { :root { --bg: #151a14; --card: #1f261d; --tx: #eef2e8; --mu: #a3ad9f; --bd: #333d30; --gd: #b4e04a } }
-* { box-sizing: border-box } body { margin: 0; background: var(--bg); color: var(--tx); font: 15px/1.45 -apple-system, "Helvetica Neue", Arial, sans-serif }
-.top { background: var(--g); color: #fff; padding: 28px 16px 22px } .top div, main { max-width: 1180px; margin: 0 auto }
-.top h1 { margin: 0 0 4px; font-size: 26px } .top p { margin: 0; opacity: .95 }
-main { padding: 20px 16px 120px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)) }
-.card { background: var(--card); border: 2px solid var(--bd); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px }
-.card.chosen { border-color: var(--g) } .card.rejected { opacity: .55 } .card.later { border-style: dashed }
-header { display: grid; grid-template-columns: auto 1fr; gap: 10px } .id { width: 34px; height: 34px; border-radius: 50%; background: var(--g); color: #fff; font-weight: 800; display: grid; place-items: center }
-h2 { margin: 2px 0; font-size: 18px } header p { margin: 0; color: var(--mu) } .meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
-.meta b { color: var(--gd); margin-right: 4px } .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--bg); border: 1px solid var(--bd) }
-.meals { list-style: none; margin: 0; padding: 0 } .meals li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--bd) }
-.meals small { display: block; color: var(--mu); text-transform: uppercase; font-size: 11px; letter-spacing: .06em } .meals p { margin: 2px 0 0; color: var(--mu); font-size: 13px }
-.meals label { position: relative; width: 24px; height: 24px } .meals input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer } .x { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--bd); color: var(--mu); cursor: pointer; font-size: 12px }
-.meals input:checked + .x { background: #d64545; border-color: #d64545; color: #fff } .meals input:focus-visible + .x { outline: 2px solid var(--gd) }
-.meals li:has(input:checked) strong { text-decoration: line-through; color: var(--mu) }
-.actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px } .actions button { padding: 10px 4px; border-radius: 10px; border: 1px solid var(--bd); background: var(--bg); color: var(--tx); font: inherit; font-size: 13px; cursor: pointer }
-.actions button[aria-checked=true] { background: var(--g); border-color: var(--g); color: #fff; font-weight: 700 }
-textarea { width: 100%; min-height: 52px; border-radius: 10px; border: 1px solid var(--bd); background: var(--bg); color: var(--tx); padding: 8px; font: inherit; font-size: 13px; resize: vertical }
-footer { position: fixed; inset: auto 0 0 0; background: var(--card); border-top: 1px solid var(--bd); padding: 12px 16px } footer div { max-width: 1180px; margin: 0 auto; display: flex; gap: 10px; align-items: center }
-footer input { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 1px solid var(--bd); background: var(--bg); color: var(--tx); font: inherit }
-#go { padding: 11px 20px; border: 0; border-radius: 10px; background: var(--g); color: #fff; font-weight: 800; font: inherit; cursor: pointer } #go:disabled { opacity: .45; cursor: default }
-.done { text-align: center; padding: 60px 16px; font-size: 20px }
-</style></head><body>
-<section class="top"><div><h1>${esc(m.title || 'Choisis ton menu')}</h1><p>Un menu à prendre, les autres à refuser ou garder pour plus tard. ✕ sur un plat = « pas celui-là ».</p></div></section>
-<main>${m.options.map(card).join('')}</main>
-<footer><div><input id="note" placeholder="Remarque générale (optionnel)"><button id="go" disabled>Valider</button></div></footer>
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Choisis ton menu — DeliveryFresh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Young+Serif&display=swap">
+<style>${fs.readFileSync(CSS, 'utf8')}
+@media (max-width: 760px) { .dock { bottom: 0; padding-bottom: calc(14px + env(safe-area-inset-bottom)) } }
+.done { text-align: center; padding: 120px 20px; font: 28px var(--serif) }</style></head><body>
+<header class="bar"><div class="in"><span class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--basil)"/><path d="M16 25c0-6 0-9-5-12 4 0 5 2 5 4 0-4 2-8 7-8-3 2-5 5-5 9" fill="none" stroke="var(--on-basil)" stroke-width="2.2" stroke-linecap="round"/></svg>DeliveryFresh</span>
+${opts.backUrl ? `<a class="btn quiet" href="${esc(opts.backUrl)}">Retour à la commande</a>` : ''}</div></header>
+<main class="page-pad">
+  <div class="page-head"><div><h1>${esc(m.title || 'Choisis ton menu')}</h1>
+    <p class="muted">Choisis un menu. Touche ✕ sur un plat qui ne te dit rien, l'IA le remplacera. Les autres menus : « Plus tard » pour les garder, « Non » pour ne plus les revoir.</p></div></div>
+  <div class="menus">${m.options.map(card).join('')}</div>
+</main>
+<div class="dock"><div class="in"><div class="sum" id="sum"></div>
+  <input id="note" type="text" placeholder="Une remarque générale ?" aria-label="Remarque générale"><button class="btn big" id="go" disabled></button></div></div>
 <script>
 const POST = ${JSON.stringify(opts.postUrl || '')}, BACK = ${JSON.stringify(opts.backUrl || '/')};
-const state = {};
-document.querySelectorAll('.card').forEach(c => c.querySelectorAll('.actions button').forEach(b => {
-  b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
-  b.onclick = () => {
-    const id = c.dataset.id, d = b.dataset.d;
-    if (d === 'chosen') for (const [k, v] of Object.entries(state)) if (v === 'chosen') { state[k] = undefined; paint(k); } // un seul menu choisi
-    state[id] = state[id] === d ? undefined : d; paint(id);
-  };
+const state = {}, cards = [...document.querySelectorAll('.menu')];
+cards.forEach(c => c.querySelectorAll('.decide button').forEach(b => b.onclick = () => {
+  const id = c.dataset.id, d = b.dataset.d;
+  if (d === 'chosen') for (const k in state) if (state[k] === 'chosen') state[k] = undefined; // un seul menu choisi
+  state[id] = state[id] === d ? undefined : d;
+  paint();
 }));
-function paint(id) {
-  const c = document.querySelector('.card[data-id="' + CSS.escape(id) + '"]');
-  c.className = 'card ' + (state[id] || '');
-  c.querySelectorAll('.actions button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.d === state[id])));
-  document.getElementById('go').disabled = !Object.values(state).some(Boolean);
+document.addEventListener('change', e => e.target.matches('.nomeal') && paint());
+function paint() {
+  cards.forEach(c => {
+    const d = state[c.dataset.id];
+    c.className = 'menu ' + (d || '');
+    c.querySelectorAll('.decide button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === d)));
+    c.querySelector('[data-d=chosen]').textContent = d === 'chosen' ? '✓ Menu choisi' : 'Choisir ce menu';
+  });
+  const chosen = cards.find(c => state[c.dataset.id] === 'chosen'), any = Object.values(state).some(Boolean);
+  const go = document.getElementById('go'), sum = document.getElementById('sum');
+  const n = c => c.querySelectorAll('.nomeal:checked').length;
+  if (chosen) {
+    const k = n(chosen);
+    sum.innerHTML = '<b></b><span class="muted small">' + (k ? k + ' plat' + (k > 1 ? 's' : '') + ' à remplacer, puis' : 'Ensuite,') + ' l’IA compare les paniers (5 à 15 min).</span>';
+    go.textContent = 'Comparer les paniers';
+  } else if (any) {
+    sum.innerHTML = '<b>Aucun menu choisi</b><span class="muted small">L’IA en propose d’autres en tenant compte de tes refus.</span>';
+    go.textContent = 'Proposer d’autres menus';
+  } else {
+    sum.innerHTML = '<b>Quel menu te tente ?</b><span class="muted small">Ou dis « Non » à tous pour en avoir d’autres.</span>';
+    go.textContent = 'Valider';
+  }
+  if (chosen) sum.querySelector('b').textContent = 'Menu ' + chosen.dataset.id + ' : ' + chosen.dataset.name;
+  go.disabled = !any;
 }
+paint();
 document.getElementById('go').onclick = async () => {
-  const options = [...document.querySelectorAll('.card')].map(c => ({
+  const go = document.getElementById('go');
+  const options = cards.map(c => ({
     id: c.dataset.id, decision: state[c.dataset.id] || null, comment: c.querySelector('textarea').value.trim(),
     rejectedMeals: [...c.querySelectorAll('.nomeal:checked')].map(i => +i.dataset.i),
   }));
   const r = { options, note: document.getElementById('note').value.trim() };
+  go.disabled = true; go.textContent = 'Envoi…';
   if (POST) {
     const res = await fetch(POST, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(r) });
-    if (!res.ok) return alert('Erreur : ' + await res.text());
+    if (!res.ok) { go.disabled = false; paint(); return alert('Erreur : ' + ((await res.json().catch(() => ({}))).error || res.statusText)); }
     location.href = BACK;
   } else {
     await window.submitChoice(r);
-    document.body.innerHTML = '<p class="done">✅ C\\'est noté ! Tu peux fermer cette fenêtre.</p>';
+    document.body.innerHTML = '<p class="done">C’est noté, tu peux fermer cette fenêtre.</p>';
   }
 };
 </script></body></html>`;

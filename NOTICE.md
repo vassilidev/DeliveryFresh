@@ -34,7 +34,8 @@ Pour arrêter l'app : `Ctrl + C` dans le terminal.
 1. **Profil** : adresse, nombre de personnes, équipements (plaques, four, micro-ondes…), allergies, régime,
    ce que tu as toujours au placard, préférences, abonnements. Clique sur **Enregistrer**.
 2. **Comptes** : clique sur **Se connecter** pour Uber Eats, puis pour Deliveroo. Une fenêtre Chrome s'ouvre :
-   connecte-toi normalement, puis **ferme la fenêtre**. La session est gardée.
+   connecte-toi normalement : **la fenêtre se ferme toute seule** une fois connecté. La session est gardée,
+   et la page Comptes indique jusqu'à quand.
    C'est nécessaire pour voir tes vrais frais (Uber One, Deliveroo Plus).
 
 ## 4. Passer une commande
@@ -108,7 +109,7 @@ L'app n'est accessible que depuis ton Mac. Le lancer avec `HOST=0.0.0.0 npm star
 | « Claude n'a pas terminé » | vérifie que `claude` est installé et connecté (lance-le une fois dans un terminal), puis **Relancer** |
 | Une étape a échoué | bouton **Relancer** sur la commande ; le détail de l'erreur est affiché |
 | Frais bizarres, produits non trouvés | session expirée : **Comptes → Se connecter** |
-| Une tâche reste « en attente » | une seule tâche tourne à la fois (une fenêtre de connexion encore ouverte bloque la file : ferme-la) |
+| Une tâche reste « en attente » | une seule tâche tourne à la fois (une fenêtre de connexion encore ouverte bloque la file : connecte-toi ou ferme-la ; elle abandonne seule après 10 min) |
 | « Article indisponible » au paiement | **🔄 Revérifier le panier** sur la page de la commande |
 | « Ce panier n'existe plus » | déjà commandé, vidé ou expiré. Si tu n'as **pas** commandé : **♻️ Recréer le panier** |
 | « Session expirée » | **Comptes → Se connecter**, puis relance l'étape |

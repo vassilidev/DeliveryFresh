@@ -2,121 +2,213 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>DeliveryFresh</title>
-<style>
-:root { --g: #91c11e; --gd: #4d7a00; --bg: #f6f7f2; --card: #fff; --tx: #1f2a1f; --mu: #6b756b; --bd: #e3e8d8; --red: #c73b3b }
-@media (prefers-color-scheme: dark) { :root { --bg: #151a14; --card: #1f261d; --tx: #eef2e8; --mu: #a3ad9f; --bd: #333d30; --gd: #b4e04a } }
-* { box-sizing: border-box }
-body { margin: 0; background: var(--bg); color: var(--tx); font: 15px/1.5 -apple-system, "Helvetica Neue", Arial, sans-serif }
-a { color: var(--gd) }
-.top { background: var(--g); color: #fff }
-.top .in { max-width: 1000px; margin: 0 auto; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center }
-.logo { font-weight: 800; font-size: 20px; margin-right: auto; color: #fff; text-decoration: none }
-nav { display: flex; flex-wrap: wrap; gap: 2px }
-nav a { color: #fff; text-decoration: none; font-weight: 600; padding: 6px 10px; border-radius: 8px; white-space: nowrap }
-nav a.on { background: rgba(255,255,255,.25) }
-main { max-width: 1000px; margin: 0 auto; padding: 22px 16px 60px }
-h1 { font-size: 24px; margin: 0 0 14px } h2 { font-size: 18px; margin: 22px 0 10px }
-.card { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 16px; margin-bottom: 14px }
-.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) }
-.muted { color: var(--mu) } .small { font-size: 13px }
-label { display: block; font-weight: 600; margin: 12px 0 4px }
-input[type=text], input[type=number], textarea, select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--bd); background: var(--bg); color: var(--tx); font: inherit }
-textarea { min-height: 70px; resize: vertical }
-.checks { display: flex; flex-wrap: wrap; gap: 8px } .checks label { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; margin: 0; padding: 6px 10px; border: 1px solid var(--bd); border-radius: 99px; background: var(--bg); cursor: pointer }
-.btn { display: inline-block; padding: 10px 16px; border-radius: 10px; border: 0; background: var(--g); color: #fff; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none }
-.btn.ghost { background: transparent; color: var(--tx); border: 1px solid var(--bd) } .btn:disabled { opacity: .5; cursor: default }
-.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center }
-.badge { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 99px; background: var(--bg); border: 1px solid var(--bd) }
-.badge.ok { background: var(--g); border-color: var(--g); color: #fff }
-.log { background: #111; color: #cfe8a0; border-radius: 10px; padding: 10px; font: 12px/1.5 ui-monospace, Menlo, monospace; max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-word }
-.slots { overflow-x: auto } .slots table { border-collapse: collapse } .slots td, .slots th { padding: 4px 8px; text-align: center; white-space: nowrap } .slots th { font-size: 13px; font-weight: 600 }
-table.cmp { width: 100%; border-collapse: collapse } .cmp td, .cmp th { padding: 10px 8px; border-bottom: 1px solid var(--bd); text-align: left; vertical-align: top } .cmp .num { text-align: right; white-space: nowrap }
-.cmp tr.reco { background: color-mix(in srgb, var(--g) 12%, transparent) }
-.table-wrap { overflow-x: auto }
-.stars button { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--bd); padding: 0 2px } .stars button.on { color: #f5a623 }
-.err { color: var(--red); font-weight: 600 }
-.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bd); border-top-color: var(--g); border-radius: 50%; animation: s 1s linear infinite; vertical-align: -2px } @keyframes s { to { transform: rotate(360deg) } }
-</style>
+<meta name="theme-color" content="#f2f5f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1511" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232e6a4c'/%3E%3Cpath d='M16 25c0-6 0-9-5-12 4 0 5 2 5 4 0-4 2-8 7-8-3 2-5 5-5 9' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Young+Serif&display=swap">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header class="top"><div class="in">
-  <a class="logo" href="#/">🥕 DeliveryFresh</a>
-  <nav>
-    <a href="#/">Commandes</a><a href="#/new">Nouvelle commande</a><a href="#/plats">Mes plats</a><a href="#/profil">Profil</a><a href="#/comptes">Comptes</a>
-  </nav>
+<header class="bar"><div class="in">
+  <a class="logo" href="#/" aria-label="DeliveryFresh, accueil">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--basil)"/><path d="M16 25c0-6 0-9-5-12 4 0 5 2 5 4 0-4 2-8 7-8-3 2-5 5-5 9" fill="none" stroke="var(--on-basil)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    DeliveryFresh
+  </a>
+  <nav class="nav" id="nav"></nav>
+  <a class="btn" href="#/new" id="cta-new"></a>
 </div></header>
 <main id="app"></main>
+<div id="toasts" role="status" aria-live="polite"></div>
+<dialog id="dlg"><form method="dialog">
+  <h2 id="dlg-t"></h2><p class="muted" id="dlg-b"></p>
+  <div class="row"><button class="btn quiet" value="no">Annuler</button><button class="btn" value="yes" id="dlg-ok"></button></div>
+</form></dialog>
 <script>
+// ---------- Outils ----------
 const $ = s => document.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const eur = n => n == null ? '—' : n.toFixed(2).replace('.', ',') + ' €';
-// Prix PAYÉ par repas (comparable entre paniers) ; le coût consommé par repas (perMeal, calcul de l'IA) est affiché sur la commande.
-const perMeal = (b, nMeals) => nMeals ? b.total / nMeals : null;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = n => n == null || isNaN(n) ? '—' : Number(n).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+const cap = s => String(s || '').replace(/^\p{L}/u, c => c.toUpperCase());
+const pretty = t => cap(String(t || '').replace(/^Repas\s*:\s*/i, ''));
+const plural = (n, w, ws = w + 's') => `${n} ${n > 1 ? ws : w}`;
+const APP = { ubereats: { name: 'Uber Eats', url: 'https://www.ubereats.com/fr', color: '#06c167' }, deliveroo: { name: 'Deliveroo', url: 'https://deliveroo.fr/fr/', color: '#00ccbc' } };
+const app = p => APP[p] || { name: p, url: '#' };
+const dt = d => new Date(d).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+
+const ico = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
+const I = {
+  orders: ico('<path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/>'),
+  plus: ico('<path d="M12 5v14M5 12h14"/>'),
+  dish: ico('<path d="M3 13h18a9 9 0 0 1-18 0Z"/><path d="M12 4v4M8 6l1 2M16 6l-1 2"/>'),
+  user: ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+  key: ico('<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/>'),
+  sun: ico('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  moon: ico('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>'),
+  check: ico('<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>'),
+  alert: ico('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  refresh: ico('<path d="M3 12a9 9 0 0 1 15.5-6.3L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.3L3 16M3 21v-5h5"/>'),
+  file: ico('<path d="M14 3H6v18h12V7l-4-4Z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>'),
+  ext: ico('<path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/>'),
+  back: ico('<path d="M15 18l-6-6 6-6"/>'),
+  send: ico('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+  star: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2.8 2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z"/></svg>',
+  basket: ico('<path d="M4 9h16l-1.5 11h-13L4 9Z"/><path d="m8 9 4-6 4 6M9 13v3M15 13v3"/>', 'stroke-width="1.5"'),
+};
+
 async function api(path, opts = {}) {
   const r = await fetch('/api' + path, { ...opts, headers: { 'content-type': 'application/json' }, body: opts.body && JSON.stringify(opts.body) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || r.statusText);
   return j;
 }
-let timer;
-function poll(fn, ms = 2500) { clearTimeout(timer); timer = setTimeout(fn, ms); }
 
+function toast(msg, err = false) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (err ? ' err' : ''); t.textContent = msg;
+  $('#toasts').append(t);
+  setTimeout(() => t.remove(), err ? 6000 : 3200);
+}
+
+// Confirmation dans un vrai dialogue (pas de confirm() natif).
+function ask(title, body, ok = 'Confirmer') {
+  const d = $('#dlg');
+  $('#dlg-t').textContent = title; $('#dlg-b').textContent = body; $('#dlg-ok').textContent = ok;
+  d.returnValue = ''; d.showModal();
+  return new Promise(res => d.addEventListener('close', () => res(d.returnValue === 'yes'), { once: true }));
+}
+
+// Lance une action depuis un bouton : état de chargement, toast, re-rendu.
+async function act(btn, fn, done) {
+  const html = btn?.innerHTML;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>' + btn.textContent; }
+  try { await fn(); if (done) toast(done); await render(); }
+  catch (e) { toast(e.message, true); if (btn) { btn.disabled = false; btn.innerHTML = html; } }
+}
+
+// Durées « depuis » mises à jour sans re-rendre la page.
+const ago = ms => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s`; };
+setInterval(() => document.querySelectorAll('[data-since]').forEach(e => e.textContent = ago(Date.now() - +e.dataset.since)), 1000);
+
+let timer, mount;
+const poll = (ms = 2500) => { clearTimeout(timer); timer = setTimeout(() => render(true), ms); };
+const onMount = fn => { mount = fn; };
+
+// ---------- Vues ----------
 const views = {
-  // ---------- Commandes ----------
+  // ---------- Accueil : commandes ----------
   async '/'() {
-    const [orders, prof] = await Promise.all([api('/orders'), api('/profile')]);
-    const intro = !prof.exists ? `<div class="card">👋 Bienvenue ! Commence par remplir ton <a href="#/profil">profil</a>, puis connecte tes <a href="#/comptes">comptes</a>.</div>` : '';
-    return `${intro}<div class="row" style="justify-content:space-between"><h1>Commandes</h1><a class="btn" href="#/new">+ Nouvelle commande</a></div>
-      ${orders.length ? orders.map(o => `<a class="card row" style="text-decoration:none;color:inherit;justify-content:space-between" href="#/o/${esc(o.id)}">
-        <span><b>${esc(o.title)}</b><br><span class="muted small">${esc(o.id)}</span></span>
-        <span class="badge ${o.state === 'Terminée' ? 'ok' : ''}">${o.busy ? '<span class="spin"></span> ' : ''}${esc(o.state)}</span></a>`).join('')
-      : '<p class="muted">Aucune commande pour l\'instant.</p>'}`;
+    const [orders, prof, acc] = await Promise.all([api('/orders'), api('/profile'), api('/accounts')]);
+    if (orders.some(o => o.busy)) poll();
+    const connected = acc.ubereats || acc.deliveroo;
+    const setup = !prof.exists || !connected || !orders.length;
+    const steps = [
+      [prof.exists, '#/profil', 'Ton profil', 'Adresse, nombre de personnes, ce que tu as en cuisine.'],
+      [connected, '#/comptes', 'Tes comptes', 'Connecte Uber Eats et/ou Deliveroo pour voir tes vrais frais.'],
+      [orders.length > 0, '#/new', 'Ta première commande', 'Choisis tes repas : l\'IA propose des menus et compare les paniers.'],
+    ];
+    const next = steps.findIndex(s => !s[0]);
+    const welcome = setup ? `<div class="welcome">${steps.map(([ok, href, t, d], i) =>
+      `<a href="${href}" class="${ok ? 'done' : i === next ? 'next' : ''}"><b>${t}</b><span class="muted small">${d}</span></a>`).join('')}</div>` : '';
+
+    const card = o => {
+      const d = new Date(o.createdAt || o.id.slice(0, 10));
+      const todo = !o.busy && !o.error && (o.step === 1 || (o.step === 2 && o.state === 'Paniers à choisir'));
+      const pill = o.error ? `<span class="pill err">Échec, à relancer</span>` : o.stalled ? `<span class="pill err">Interrompue, à relancer</span>`
+        : o.busy ? `<span class="pill ok"><span class="dot live"></span>${o.step === 0 ? 'Menus en préparation' : o.step === 3 ? 'Vérification' : 'Paniers en préparation'}</span>`
+        : todo ? `<span class="pill todo">${o.step === 1 ? 'Choisis ton menu' : 'Choisis ton panier'}</span>`
+        : o.step === 3 ? `<span class="pill ok">Prête à payer</span>` : `<span class="pill">${esc(o.state)}</span>`;
+      return `<a class="order ${todo ? 'attn' : ''}" href="#/o/${esc(o.id)}">
+        <div class="date"><b>${d.getDate()}</b><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span></div>
+        <div><h3>${esc(pretty(o.title))}</h3>
+          <p class="sub">${plural(o.meals, 'repas', 'repas')}, ${plural(o.people || 1, 'personne')}${o.menu ? `, menu « ${esc(o.menu)} »` : ''}${o.store ? `<br>${esc(o.store)} sur ${esc(app(o.platform).name)}` : ''}</p></div>
+        <div class="end">${o.total != null ? `<b>${eur(o.total)}</b>` : ''}${pill}
+          <span class="mini-steps" aria-hidden="true">${[0, 1, 2, 3].map(i => `<i class="${i <= o.step ? 'on' : ''}"></i>`).join('')}</span></div>
+      </a>`;
+    };
+    return `<div class="page-head"><div><h1>${setup && !orders.length ? 'Bienvenue' : 'Tes commandes'}</h1>
+        <p class="muted">Tu choisis tes repas, l'IA écrit les menus, compare les paniers Uber Eats et Deliveroo frais compris, et remplit le meilleur. Tu paies dans l'app.</p></div>
+        ${prof.exists ? `<a class="btn big" href="#/new">${I.plus}Nouvelle commande</a>` : ''}</div>
+      ${welcome}
+      ${orders.length ? `<div class="orders ${setup ? 'section' : ''}">${orders.map(card).join('')}</div>` : ''}`;
   },
 
   // ---------- Nouvelle commande ----------
   async '/new'() {
     const { profile, exists } = await api('/profile');
-    if (!exists) return `<div class="card">Remplis d'abord ton <a href="#/profil">profil</a> (adresse, équipements…).</div>`;
+    if (!exists) return emptyState('Il manque ton profil', 'Ton adresse et ton équipement de cuisine servent à choisir les magasins et les recettes.', '#/profil', 'Remplir mon profil');
     const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d; });
     const fmt = d => d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' });
     const hour = new Date().getHours();
-    setTimeout(() => $('#f').onsubmit = async e => {
-      e.preventDefault();
-      const f = new FormData(e.target);
-      try {
-        const { id } = await api('/orders', { method: 'POST', body: {
-          // ordre chronologique (le tableau se lit ligne par ligne : tous les midis puis tous les soirs)
-          slots: [...e.target.querySelectorAll('input[name=slot]:checked')].sort((a, b) => a.dataset.k - b.dataset.k).map(x => x.value), people: f.get('people'), exceptions: f.get('exceptions'), extras: f.get('extras'),
-          wishes: f.get('wishes'), budget: f.get('budget'), platforms: f.getAll('platform'),
-        } });
-        location.hash = '#/o/' + id;
-      } catch (err) { $('#msg').textContent = err.message; }
+    const past = (i, m) => i === 0 && (m === 'midi' ? hour >= 14 : hour >= 21);
+    onMount(() => {
+      const f = $('#f'), boxes = [...f.querySelectorAll('input[name=slot]')];
+      const people = f.querySelector('output');
+      const sync = () => {
+        const on = boxes.filter(b => b.checked).sort((a, b) => a.dataset.k - b.dataset.k);
+        const n = on.length, p = +people.value;
+        $('#sum').innerHTML = n ? `<b>${plural(n, 'repas', 'repas')} pour ${plural(p, 'personne')}</b><span class="muted small">${esc(cap(on[0].value))}${n > 1 ? ` jusqu'à ${esc(on.at(-1).value)}` : ''}</span>`
+          : `<b>Choisis tes repas</b><span class="muted small">Touche les midis et les soirs à couvrir.</span>`;
+        $('#go').disabled = !n || !f.querySelectorAll('input[name=platform]:checked').length;
+        f.querySelectorAll('.stepper button')[0].disabled = p <= 1;
+      };
+      f.addEventListener('change', sync);
+      f.querySelectorAll('.day > b').forEach(h => h.onclick = () => {
+        const bs = [...h.parentElement.querySelectorAll('input:not(:disabled)')], all = bs.every(b => b.checked);
+        bs.forEach(b => b.checked = !all); sync();
+      });
+      f.querySelectorAll('.presets button').forEach(b => b.onclick = () => {
+        // Préréglages : les N prochains créneaux encore possibles du type demandé.
+        const [type, n] = b.dataset.p.split(':'), free = boxes.filter(x => !x.disabled).sort((a, b) => a.dataset.k - b.dataset.k);
+        const want = free.filter(x => type === 'tout' || (type === 'soir') === !!(x.dataset.k & 1)).slice(0, +n || 0);
+        boxes.forEach(x => x.checked = want.includes(x));
+        sync();
+      });
+      f.querySelectorAll('.stepper button').forEach(b => b.onclick = () => { people.value = Math.min(20, Math.max(1, +people.value + +b.dataset.d)); sync(); });
+      sync();
+      f.onsubmit = async e => {
+        e.preventDefault();
+        const fd = new FormData(f);
+        await act($('#go'), async () => {
+          const { id } = await api('/orders', { method: 'POST', body: {
+            slots: boxes.filter(b => b.checked).sort((a, b) => a.dataset.k - b.dataset.k).map(x => x.value), people: +people.value,
+            exceptions: fd.get('exceptions'), extras: fd.get('extras'), wishes: fd.get('wishes'), budget: fd.get('budget'), platforms: fd.getAll('platform'),
+          } });
+          location.hash = '#/o/' + id;
+        });
+      };
     });
-    return `<h1>Nouvelle commande</h1><form id="f" class="card">
-      <label>Repas à couvrir</label>
-      <div class="slots"><table><tr><th></th>${days.map(d => `<th>${esc(fmt(d))}</th>`).join('')}</tr>
-        ${['midi', 'soir'].map(m => `<tr><th>${m}</th>${days.map((d, i) => {
-          const past = i === 0 && (m === 'midi' ? hour >= 14 : hour >= 21);
-          return `<td><input type="checkbox" name="slot" data-k="${i * 2 + (m === 'soir' ? 1 : 0)}" value="${esc(fmt(d) + ' ' + m)}" aria-label="${esc(fmt(d) + ' ' + m)}" ${past ? 'disabled' : ''}></td>`;
-        }).join('')}</tr>`).join('')}</table></div>
-      <div class="grid">
-        <div><label for="people">Personnes par repas</label><input id="people" type="number" name="people" min="1" max="20" value="${esc(profile.people)}"></div>
-        <div><label for="budget">Budget</label><select id="budget" name="budget">
-          <option>équilibré</option><option>le moins cher possible</option><option>qualité d'abord</option></select></div>
-      </div>
-      <label for="exceptions">Exceptions pour cette fois <span class="muted small">(invité mardi soir, pas de micro-ondes…)</span></label>
-      <textarea id="exceptions" name="exceptions"></textarea>
-      <label for="extras">Courses perso en plus <span class="muted small">(café, lait, petit-déj, snacks…)</span></label>
-      <textarea id="extras" name="extras"></textarea>
-      <label for="wishes">Envies / contraintes <span class="muted small">(envie de pâtes, rien de trop long…)</span></label>
-      <textarea id="wishes" name="wishes"></textarea>
-      <label>Plateformes à comparer</label>
-      <div class="checks"><label><input type="checkbox" name="platform" value="ubereats" checked> Uber Eats</label><label><input type="checkbox" name="platform" value="deliveroo" checked> Deliveroo</label></div>
-      <p class="err" id="msg"></p>
-      <button class="btn">Me proposer des menus</button>
-      <p class="muted small">L'IA prépare 2 à 3 menus (1 à 3 min). Tu les choisiras sur la page suivante.</p>
+    const slot = (d, i, m) => `<label class="slot"><input type="checkbox" name="slot" data-k="${i * 2 + (m === 'soir' ? 1 : 0)}" value="${esc(fmt(d) + ' ' + m)}" aria-label="${esc(fmt(d) + ' ' + m)}" ${past(i, m) ? 'disabled' : ''}>
+      <span>${m === 'midi' ? I.sun : I.moon}${m === 'midi' ? 'Midi' : 'Soir'}</span></label>`;
+    return `<div class="page-head"><div><h1>Nouvelle commande</h1><p class="muted">Quels repas veux-tu couvrir ? L'IA te proposera 2 à 3 menus, tu choisiras ensuite.</p></div></div>
+    <form id="f" class="page-pad">
+      <section class="panel">
+        <span class="label">Tes repas <span class="hint">Touche un jour pour prendre le midi et le soir.</span></span>
+        <div class="week">${days.map((d, i) => `<div class="day ${i === 0 ? 'today' : ''}">
+          <b role="button" tabindex="0">${i === 0 ? 'Auj.' : esc(d.toLocaleDateString('fr-FR', { weekday: 'short' }))}<span>${d.getDate()}</span></b>
+          ${slot(d, i, 'midi')}${slot(d, i, 'soir')}</div>`).join('')}</div>
+        <div class="presets"><button type="button" data-p="soir:5">Les 5 prochains soirs</button><button type="button" data-p="midi:5">Les 5 prochains midis</button>
+          <button type="button" data-p="tout:6">Les 6 prochains repas</button><button type="button" data-p="tout:10">Les 10 prochains repas</button><button type="button" data-p="tout:0">Tout effacer</button></div>
+      </section>
+      <section class="panel"><div class="form-grid">
+        <div><span class="label">Personnes à table</span>
+          <div class="stepper"><button type="button" data-d="-1" aria-label="Une personne de moins">−</button><output aria-live="polite">${esc(profile.people || 1)}</output><button type="button" data-d="1" aria-label="Une personne de plus">+</button></div></div>
+        <div><span class="label">Budget</span>
+          <div class="seg" role="radiogroup">${[['équilibré', 'Équilibré'], ['le moins cher possible', 'Le moins cher'], ['qualité d\'abord', 'Qualité d\'abord']].map(([v, l], i) =>
+            `<label><input type="radio" name="budget" value="${esc(v)}" ${i ? '' : 'checked'}><span>${l}</span></label>`).join('')}</div></div>
+        <div><span class="label">Où comparer</span>
+          <div class="chips">${Object.entries(APP).map(([k, a]) => `<label class="chip"><input type="checkbox" name="platform" value="${k}" checked><span>${a.name}</span></label>`).join('')}</div></div>
+      </div></section>
+      <section class="panel"><div class="form-grid">
+        <label class="field"><span>Envies du moment <span class="hint">Facultatif</span></span><textarea name="wishes" placeholder="Envie de pâtes, rien de trop long le midi, de belles portions…"></textarea></label>
+        <label class="field"><span>Pour cette fois seulement <span class="hint">Facultatif, ton profil ne change pas</span></span><textarea name="exceptions" placeholder="Un invité jeudi soir, pas de micro-ondes cette semaine…"></textarea></label>
+        <label class="field" style="margin:0"><span>Courses en plus <span class="hint">Ajoutées à chaque panier comparé</span></span><textarea name="extras" placeholder="Café, lait, yaourts, papier toilette…"></textarea></label>
+      </div></section>
+      <div class="dock"><div class="in"><div class="sum" id="sum"></div>
+        <button class="btn big" id="go" disabled>Proposer des menus</button></div></div>
     </form>`;
   },
 
@@ -124,82 +216,78 @@ const views = {
   async '/o/:id'(id) {
     const o = await api('/orders/' + id);
     const busy = ['queued', 'running'].includes(o.job?.status);
-    if (busy) poll(render);
+    if (busy) poll();
     const req = o.request || {};
     const nMeals = o.choice?.chosen?.meals?.length || (req.slots || []).length;
-    let step = '';
-    if (busy) {
-      step = `<div class="card"><h2 style="margin-top:0"><span class="spin"></span> ${esc(o.job.label)}${o.job.queued > 0 ? ` — en attente (${o.job.queued} avant)` : ''}</h2>
-        <p class="muted small">Tu peux fermer cette page, ça continue en arrière-plan.</p>
-        <div class="log" id="log">${esc(o.job.log.join('\n')) || 'Démarrage…'}</div></div>`;
-      setTimeout(() => { const l = $('#log'); if (l) l.scrollTop = l.scrollHeight; });
-    } else if (o.job?.status === 'error') {
-      step = `<div class="card"><p class="err">La dernière étape a échoué.</p><div class="log">${esc(o.job.log.slice(-15).join('\n'))}</div>
-        <p><button class="btn" onclick="retry('${esc(id)}')">Relancer</button></p></div>`;
-    } else if (o.pick) {
-      const b = o.result.baskets.find(x => x.id === o.pick.basketId) || {};
-      const c = o.cart, app = b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo';
-      const status = !c ? '<p class="muted">Panier pas encore vérifié.</p>'
-        : c.missing ? `<p class="err">⚠️ Ce panier n'existe plus sur ${app} (vérifié le ${esc(new Date(c.checkedAt).toLocaleString('fr-FR'))}) : déjà commandé, vidé ou expiré.</p>
-          <p><button class="btn" onclick="rebuild('${esc(id)}')">♻️ Recréer le panier</button> <span class="muted small">À ne faire que si tu n'as pas encore commandé.</span></p>`
-        : c.unavailable?.length
-          ? `<p class="err">⚠️ ${c.unavailable.length} article(s) indisponible(s) : ${esc(c.unavailable.map(i => i.title).join(', '))}</p>`
-          : `<p>✅ Panier vérifié le ${esc(new Date(c.checkedAt).toLocaleString('fr-FR'))} : ${c.items.length} articles, tout est disponible.</p>`;
-      const r = o.repair;
-      const repair = r ? `<div class="card small" style="background:var(--bg)"><b>🔁 Remplacements faits par l'IA</b><ul>
-        ${(r.replaced || []).map(x => `<li>${esc(x.from)} → <b>${esc(x.to)}</b>${x.note ? ` <span class="muted">(${esc(x.note)})</span>` : ''}</li>`).join('')}
-        ${(r.removed || []).map(x => `<li>${esc(x.from)} retiré${x.why ? ` <span class="muted">(${esc(x.why)})</span>` : ''}</li>`).join('')}
-        ${(r.recipeChanges || []).map(x => `<li>📝 ${esc(x.when)} : ${esc(x.change)}</li>`).join('')}</ul></div>` : '';
-      const meals = (o.plan?.meals || []).filter(m => m.cost != null);
-      step = `<div class="card"><h2 style="margin-top:0">${c?.missing ? '⚠️ Panier introuvable' : c?.unavailable?.length ? '⚠️ Panier à vérifier' : '✅ C\'est prêt'}</h2>
-        <p>Ton panier <b>${esc(b.store)}</b> est rempli sur <b>${app}</b> : <b>${eur(c?.total ?? b.total)}</b> frais inclus. Ouvre l'app pour vérifier et payer.</p>
-        ${status}${repair}
-        ${meals.length ? `<p class="small"><b>Payé :</b> ${eur((c?.total ?? b.total) / o.plan.meals.length)} par repas en moyenne.
-          <b>Coût consommé par repas</b> (le reste va au placard) : ${meals.map(m => `${esc(m.when)} ≈ ${eur(m.cost)}`).join(' · ')}</p>` : ''}
-        <div class="row">${o.hasPdf ? `<a class="btn" href="/api/orders/${esc(id)}/pdf" target="_blank">📄 Recettes + liste de courses (PDF)</a>` : ''}
-          <button class="btn ghost" onclick="verify('${esc(id)}')">🔄 Revérifier le panier</button></div>
-        <p class="muted small">Un article peut passer en rupture entre la préparation et le paiement : « Revérifier » relit le panier,
-          fait remplacer les articles indisponibles par l'IA et met le PDF à jour. À faire juste avant de payer, ou si l'app affiche « article indisponible ».</p>
-        <p class="muted small">Après les repas, note les plats dans <a href="#/plats">Mes plats</a>.</p></div>`;
-    } else if (o.result) {
-      step = `<div class="card"><h2 style="margin-top:0">Choisis ton panier</h2>
-        ${o.result.recommendation ? `<p>💡 ${esc(o.result.recommendation)}</p>` : ''}
-        <div class="table-wrap"><table class="cmp"><tr><th>Magasin</th><th class="num">Produits</th><th class="num">Total payé</th><th class="num" title="Total payé ÷ nombre de repas">€ / repas</th><th>Remarques</th><th></th></tr>
-        ${[...o.result.baskets].sort((a, b) => a.total - b.total).map(b => `<tr class="${b.recommended ? 'reco' : ''}">
-          <td><b>${esc(b.store)}</b><br><span class="muted small">${b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'}${b.eta ? ' · ' + esc(b.eta) : ''}</span>${b.recommended ? '<br><span class="badge ok">recommandé</span>' : ''}</td>
-          <td class="num">${eur(b.subtotal)}</td><td class="num"><b>${eur(b.total)}</b></td><td class="num">≈ ${eur(perMeal(b, nMeals))}</td>
-          <td class="small">${esc(b.notes || '')}${(b.fees || []).length ? `<br><span class="muted">${b.fees.map(f => esc(f.label + ' ' + f.amount)).join(' · ')}</span>` : ''}</td>
-          <td><button class="btn" onclick="pick('${esc(id)}','${esc(b.id)}')">Je prends</button></td></tr>`).join('')}
-        </table></div>
-        <p class="muted small">« Je prends » garde ce panier dans l'app, vide les autres et génère le PDF des recettes.</p></div>`;
-    } else if (o.menus && !o.choice?.chosen) {
-      step = `<div class="card"><h2 style="margin-top:0">🍽 ${o.menus.options.length} menus t'attendent</h2>
-        <p><a class="btn" href="/o/${esc(id)}/menus">Choisir mon menu</a></p></div>`;
-    }
+    const stage = o.pick ? 3 : o.result || o.choice?.chosen ? 2 : 1;
+    const steps = ['Menus', 'Paniers', 'Prêt à payer'].map((t, i) =>
+      `<li class="${i + 1 < stage || (stage === 3 && !busy) ? 'done' : i + 1 === stage ? 'now' : ''}">${t}</li>`).join('');
+
+    let body = '';
+    if (busy) body = workPanel(o.job);
+    else if (o.job?.status === 'error') {
+      const last = [...o.job.log].reverse().find(l => l.startsWith('❌')) || o.job.log.at(-1) || '';
+      body = `<section class="panel stack"><div class="alert">${I.alert}<div><b>${esc(o.job.label)} n'a pas abouti.</b>
+          <p class="small">${esc(last.replace(/^❌\s*/, '').slice(0, 300))}</p></div></div>
+        <div class="row"><button class="btn" onclick="act(this, () => api('/orders/${esc(id)}/retry', { method: 'POST' }), 'Relancé')">${I.refresh}Relancer cette étape</button></div>
+        <details class="more" data-k="log"><summary>Journal complet</summary><div class="log">${esc(o.job.log.join('\n'))}</div></details></section>`;
+    } else if (o.pick) body = readyView(o, id);
+    else if (o.result) body = basketsView(o, id, nMeals);
+    else if (o.menus && !o.choice?.chosen) body = menusTeaser(o, id);
+    else body = `<section class="panel stack"><div class="alert">${I.alert}<div><b>${o.choice?.chosen ? 'La préparation des paniers' : 'La préparation des menus'} s'est arrêtée</b>
+        <p class="small">Le serveur a sans doute redémarré en cours de route. Relance l'étape : ce qui a déjà été fait est réutilisé.</p></div></div>
+      <div class="row"><button class="btn" onclick="act(this, () => api('/orders/${esc(id)}/retry', { method: 'POST' }), 'Relancé')">${I.refresh}Relancer</button></div></section>`;
+
     const chosen = o.choice?.chosen;
-    return `<p><a href="#/">← Commandes</a></p><h1>${esc(req.title || id)}</h1>
-      <div class="card small"><b>Repas :</b> ${esc((req.slots || []).join(' · '))}<br>
-        <b>Personnes :</b> ${esc(req.people)} ${req.extras ? `<br><b>Courses perso :</b> ${esc(req.extras)}` : ''}
-        ${req.exceptions ? `<br><b>Exceptions :</b> ${esc(req.exceptions)}` : ''} ${req.wishes ? `<br><b>Envies :</b> ${esc(req.wishes)}` : ''}
-        ${chosen ? `<br><b>Menu choisi :</b> ${esc(chosen.name)}${chosen.rejectedMeals?.length ? ` (sans : ${esc(chosen.rejectedMeals.join(', '))})` : ''}` : ''}</div>
-      ${step}`;
+    return `<a class="back" href="#/">${I.back}Commandes</a>
+      <div class="page-head"><div><h1>${esc(pretty(req.title || id))}</h1></div></div>
+      <ol class="steps">${steps}</ol>
+      ${body}
+      <section class="section"><details class="more" data-k="req"><summary>Ta demande</summary>
+        <dl class="facts" style="margin-top:12px">
+          <div><dt>Repas</dt><dd>${esc((req.slots || []).join(', '))}</dd></div>
+          <div><dt>Personnes</dt><dd>${esc(req.people)}</dd></div>
+          <div><dt>Budget</dt><dd>${esc(cap(req.budget))}</dd></div>
+          <div><dt>Plateformes</dt><dd>${esc((req.platforms || []).map(p => app(p).name).join(', '))}</dd></div>
+          ${chosen ? `<div><dt>Menu choisi</dt><dd>${esc(chosen.name)}${chosen.rejectedMeals?.length ? `, sans ${esc(chosen.rejectedMeals.join(', '))}` : ''}</dd></div>` : ''}
+          ${req.wishes ? `<div><dt>Envies</dt><dd>${esc(req.wishes)}</dd></div>` : ''}
+          ${req.exceptions ? `<div><dt>Exceptions</dt><dd>${esc(req.exceptions)}</dd></div>` : ''}
+          ${req.extras ? `<div><dt>Courses en plus</dt><dd>${esc(req.extras)}</dd></div>` : ''}
+        </dl></details></section>`;
   },
 
   // ---------- Mes plats ----------
   async '/plats'() {
     const { recipes, later } = await api('/recipes');
-    return `<h1>Mes plats</h1>
-      ${later.length ? `<h2>⏰ Menus gardés pour plus tard</h2>${later.map(m => `<div class="card small"><b>${esc(m.name)}</b> <span class="muted">(${esc(m.date)})</span><br>${esc(m.meals.map(x => x.title).join(' · '))}</div>`).join('')}` : ''}
-      <h2>Recettes</h2>
-      <div class="grid">${recipes.map(r => `<div class="card">
-        <b>${esc(r.title)}</b> <span class="muted small">· ${r.time} min</span><br>
-        <span class="small muted">${r.rating ? `★ ${r.rating}/5 · ` : ''}faite ${r.timesMade} fois${r.lastMade ? ` · dernière : ${esc(r.lastMade)}` : ''}</span>
-        ${r.notes.length ? `<ul class="small">${r.notes.slice(-3).map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
-        <div class="stars" data-slug="${esc(r.slug)}" role="group" aria-label="Note">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-v="${i}" aria-label="${i} étoile${i > 1 ? 's' : ''}">★</button>`).join('')}</div>
-        <textarea placeholder="Remarque (ex. un peu fade, à refaire)" data-note="${esc(r.slug)}"></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn" onclick="rate('${esc(r.slug)}')">Enregistrer</button>
-          <button class="btn ghost" onclick="made('${esc(r.slug)}')">Faite aujourd'hui</button></div>
-      </div>`).join('')}</div>`;
+    recipes.sort((a, b) => (b.rating || 0) - (a.rating || 0) || b.timesMade - a.timesMade || a.title.localeCompare(b.title));
+    onMount(() => {
+      $('#q').oninput = e => {
+        const q = e.target.value.trim().toLowerCase();
+        document.querySelectorAll('.dish').forEach(d => d.hidden = q && !d.dataset.s.includes(q));
+      };
+      document.querySelectorAll('.dish form').forEach(f => f.onsubmit = e => {
+        e.preventDefault();
+        const note = f.note.value.trim();
+        if (note) act(f.querySelector('button'), () => api('/recipes/' + f.dataset.slug, { method: 'POST', body: { action: 'note', note } }), 'Remarque ajoutée');
+      });
+    });
+    const day = d => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    return `<div class="page-head"><div><h1>Mes plats</h1><p class="muted">Tes notes guident les prochains menus : les plats bien notés reviennent, les autres disparaissent.</p></div></div>
+      ${later.length ? `<section style="margin-bottom:40px"><h2 style="margin-bottom:16px">Gardés pour plus tard</h2><div class="grid">${later.map(m => `<div class="later-menu">
+        <b>${esc(m.name)}</b><p class="small" style="margin-top:6px">${esc(m.meals.map(x => x.title).join(', '))}</p>
+        <p class="tiny muted" style="margin-top:8px">Mis de côté le ${esc(day(m.date))}. L'IA le reproposera quand il collera à tes repas.</p></div>`).join('')}</div></section>` : ''}
+      <div class="toolbar"><input id="q" type="search" placeholder="Chercher un plat, un ingrédient…" aria-label="Chercher un plat"><span class="muted small">${plural(recipes.length, 'recette')}</span></div>
+      <div class="grid">${recipes.map(r => `<article class="dish" data-s="${esc((r.title + ' ' + (r.tags || []).join(' ')).toLowerCase())}">
+        <div><h3>${esc(r.title)}</h3>
+          <p class="meta">${r.rating ? `★ ${String(r.rating).replace('.', ',')}/5, ` : ''}${r.time} min, ${r.timesMade ? `faite ${plural(r.timesMade, 'fois', 'fois')}${r.lastMade ? `, la dernière le ${esc(day(r.lastMade))}` : ''}` : 'jamais faite'}</p></div>
+        <div class="row spread"><div class="stars" role="group" aria-label="Noter ${esc(r.title)}">${[1, 2, 3, 4, 5].map(i =>
+          `<button type="button" class="${r.rating && i <= Math.round(r.rating) ? 'on' : ''}" aria-label="${plural(i, 'étoile')}" onclick="act(null, () => api('/recipes/${esc(r.slug)}', { method: 'POST', body: { action: 'rate', score: ${i} } }), 'Noté ${i}/5')">${I.star}</button>`).join('')}</div>
+          <button class="btn quiet" style="min-height:36px;padding:6px 12px" onclick="act(this, () => api('/recipes/${esc(r.slug)}', { method: 'POST', body: { action: 'made' } }), 'Noté comme cuisiné aujourd\\'hui')">Cuisinée aujourd'hui</button></div>
+        ${r.notes.length ? `<ul class="notes">${r.notes.slice(-2).map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
+        <div class="foot">
+          <form data-slug="${esc(r.slug)}"><input name="note" type="text" placeholder="Une remarque ? (trop salé, à refaire…)" aria-label="Remarque sur ${esc(r.title)}">
+            <button class="btn ghost" aria-label="Ajouter la remarque" style="padding:0 14px;min-height:40px">${I.send}</button></form>
+        </div></article>`).join('')}</div>`;
   },
 
   // ---------- Profil ----------
@@ -207,33 +295,47 @@ const views = {
     const { profile: p, exists } = await api('/profile');
     const EQUIP = ['plaques', 'four', 'micro-ondes', 'bouilloire', 'airfryer', 'mixeur', 'robot cuiseur', 'cocotte-minute'];
     const extra = (p.equipment || []).filter(e => !EQUIP.includes(e));
-    setTimeout(() => $('#pf').onsubmit = async e => {
-      e.preventDefault();
-      const f = new FormData(e.target), list = k => String(f.get(k) || '').split(',').map(s => s.trim()).filter(Boolean);
-      const equipment = [...f.getAll('eq'), ...list('eqOther')];
-      try {
-        await api('/profile', { method: 'PUT', body: {
-          address: f.get('address'), people: Number(f.get('people')), equipment, noEquipment: EQUIP.filter(x => !equipment.includes(x)),
-          allergies: list('allergies'), diet: list('diet'), pantry: list('pantry'), preferences: f.get('preferences'),
-          subscriptions: { uberOne: f.has('uberOne'), deliverooPlus: f.has('deliverooPlus') },
-        } });
-        $('#pmsg').textContent = '✅ Profil enregistré'; $('#pmsg').className = '';
-      } catch (err) { $('#pmsg').textContent = err.message; $('#pmsg').className = 'err'; }
+    onMount(() => {
+      const f = $('#pf'), out = f.querySelector('output');
+      f.querySelectorAll('.stepper button').forEach(b => b.onclick = () => { out.value = Math.min(20, Math.max(1, +out.value + +b.dataset.d)); });
+      f.onsubmit = e => {
+        e.preventDefault();
+        const fd = new FormData(f), list = k => String(fd.get(k) || '').split(',').map(s => s.trim()).filter(Boolean);
+        const equipment = [...fd.getAll('eq'), ...list('eqOther')];
+        act(f.querySelector('[type=submit]'), async () => {
+          await api('/profile', { method: 'PUT', body: {
+            address: fd.get('address'), people: +out.value, equipment, noEquipment: EQUIP.filter(x => !equipment.includes(x)),
+            allergies: list('allergies'), diet: list('diet'), pantry: list('pantry'), preferences: fd.get('preferences'),
+            subscriptions: { uberOne: fd.has('uberOne'), deliverooPlus: fd.has('deliverooPlus') },
+          } });
+          if (!exists) location.hash = '#/comptes';
+        }, 'Profil enregistré');
+      };
     });
-    return `<h1>Profil</h1>${exists ? '' : '<p class="muted">Profil pré-rempli avec un exemple : adapte-le puis enregistre.</p>'}
-      <form id="pf" class="card">
-        <label for="address">Adresse de livraison</label><input id="address" type="text" name="address" required value="${esc(p.address)}">
-        <label for="ppl">Personnes par défaut</label><input id="ppl" type="number" name="people" min="1" max="20" value="${esc(p.people)}">
-        <label>Équipements de cuisine</label>
-        <div class="checks">${EQUIP.map(e => `<label><input type="checkbox" name="eq" value="${e}" ${(p.equipment || []).includes(e) ? 'checked' : ''}> ${e}</label>`).join('')}</div>
-        <input type="text" name="eqOther" aria-label="Autres équipements" placeholder="Autres équipements (séparés par des virgules)" value="${esc(extra.join(', '))}" style="margin-top:8px">
-        <label for="allergies">Allergies <span class="muted small">(séparées par des virgules)</span></label><input id="allergies" type="text" name="allergies" value="${esc((p.allergies || []).join(', '))}">
-        <label for="diet">Régime <span class="muted small">(végétarien, sans porc…)</span></label><input id="diet" type="text" name="diet" value="${esc((p.diet || []).join(', '))}">
-        <label for="pantry">Toujours dans le placard <span class="muted small">(jamais acheté)</span></label><input id="pantry" type="text" name="pantry" value="${esc((p.pantry || []).join(', '))}">
-        <label for="prefs">Préférences</label><textarea id="prefs" name="preferences">${esc(p.preferences)}</textarea>
-        <label>Abonnements</label>
-        <div class="checks"><label><input type="checkbox" name="uberOne" ${p.subscriptions?.uberOne ? 'checked' : ''}> Uber One</label><label><input type="checkbox" name="deliverooPlus" ${p.subscriptions?.deliverooPlus ? 'checked' : ''}> Deliveroo Plus</label></div>
-        <p id="pmsg"></p><button class="btn">Enregistrer</button>
+    const chip = (name, value, label, on) => `<label class="chip"><input type="checkbox" name="${name}" value="${esc(value)}" ${on ? 'checked' : ''}><span>${esc(label)}</span></label>`;
+    return `<div class="page-head"><div><h1>Profil</h1><p class="muted">${exists ? 'Ce que l\'IA sait de toi pour chaque commande.' : 'Quelques infos pour commencer, modifiables à tout moment. Pré-rempli avec un exemple.'}</p></div></div>
+      <form id="pf" class="panel">
+        <section class="form-section"><h2>Livraison</h2><p>Où livrer, et pour combien de personnes en général.</p>
+          <label class="field"><span>Adresse</span><input type="text" name="address" required autocomplete="street-address" value="${esc(p.address)}"></label>
+          <div class="field"><span class="label">Personnes à table d'habitude</span>
+            <div class="stepper"><button type="button" data-d="-1" aria-label="Une personne de moins">−</button><output>${esc(p.people || 1)}</output><button type="button" data-d="1" aria-label="Une personne de plus">+</button></div></div>
+        </section>
+        <section class="form-section"><h2>Ta cuisine</h2><p>Les recettes n'utiliseront que ce que tu as.</p>
+          <div class="chips">${EQUIP.map(e => chip('eq', e, cap(e), (p.equipment || []).includes(e))).join('')}</div>
+          <label class="field" style="margin-top:16px"><span>Autres équipements <span class="hint">Séparés par des virgules</span></span><input type="text" name="eqOther" value="${esc(extra.join(', '))}"></label>
+        </section>
+        <section class="form-section"><h2>Ce que tu manges</h2><p>Respecté à chaque menu.</p>
+          <div class="form-grid">
+            <label class="field" style="margin:0"><span>Allergies <span class="hint">Séparées par des virgules</span></span><input type="text" name="allergies" placeholder="Arachides, crustacés…" value="${esc((p.allergies || []).join(', '))}"></label>
+            <label class="field" style="margin:0"><span>Régime <span class="hint">Végétarien, sans porc…</span></span><input type="text" name="diet" value="${esc((p.diet || []).join(', '))}"></label>
+          </div>
+          <label class="field" style="margin-top:20px"><span>Toujours dans le placard <span class="hint">Jamais ajouté au panier</span></span><input type="text" name="pantry" placeholder="Huile, sel, poivre…" value="${esc((p.pantry || []).join(', '))}"></label>
+          <label class="field"><span>Tes goûts</span><textarea name="preferences" placeholder="Rassasiant, simple, peu d'étapes…">${esc(p.preferences)}</textarea></label>
+        </section>
+        <section class="form-section"><h2>Abonnements</h2><p>Pour estimer les frais de livraison au plus juste.</p>
+          <div class="chips">${chip('uberOne', 'on', 'Uber One', p.subscriptions?.uberOne)}${chip('deliverooPlus', 'on', 'Deliveroo Plus', p.subscriptions?.deliverooPlus)}</div>
+        </section>
+        <div class="sticky-save"><span class="muted small" style="margin-right:auto">${exists ? '' : 'Étape suivante : connecter tes comptes'}</span><button class="btn" type="submit">${exists ? 'Enregistrer' : 'Enregistrer et continuer'}</button></div>
       </form>`;
   },
 
@@ -241,51 +343,166 @@ const views = {
   async '/comptes'() {
     const [a, jobs] = await Promise.all([api('/accounts'), api('/jobs')]);
     const active = jobs.filter(j => !j.orderId && ['queued', 'running'].includes(j.status));
-    if (active.length) poll(render);
-    const card = (p, name) => `<div class="card"><b>${name}</b> <span class="badge ${a[p] ? 'ok' : ''}">${a[p] ? 'session enregistrée' : 'jamais connecté'}</span>
-      <p class="small muted">Une fenêtre Chrome s'ouvre sur ton Mac : connecte-toi, puis ferme la fenêtre.</p>
-      <div class="row"><button class="btn" onclick="account('${p}','login')">Se connecter</button>
-      <button class="btn ghost" onclick="if(confirm('Vider TOUS tes paniers ${name} ?')) account('${p}','clear')">Vider tous mes paniers</button></div></div>`;
-    return `<h1>Comptes</h1><div class="grid">${card('ubereats', 'Uber Eats')}${card('deliveroo', 'Deliveroo')}</div>
-      ${active.map(j => `<div class="card"><span class="spin"></span> ${esc(j.label)} — ${esc(j.status === 'queued' ? 'en attente' : 'en cours')}<div class="log">${esc(j.log.join('\n'))}</div></div>`).join('')}
-      <p class="muted small">Connexion nécessaire pour voir tes vrais frais (Uber One, Deliveroo Plus). Si les frais semblent faux, reconnecte-toi.</p>`;
+    if (active.length) poll();
+    const card = p => {
+      const x = app(p), on = a[p], job = active.find(j => j.label.includes(p));
+      const last = jobs.filter(j => j.label === `Connexion ${p}`).pop();
+      const until = on && new Date(a.expires[p]).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `<section class="panel acct">
+        <div class="brand"><span class="mark" style="background:${x.color}">${x.name.split(' ').map(w => w[0]).join('')}</span>
+          <div><h2>${x.name}</h2>${on ? `<span class="pill ok"><span class="dot"></span>Connecté jusqu'au ${until}</span>` : '<span class="pill">Pas connecté</span>'}</div></div>
+        ${job ? `<div class="alert ok"><span class="spin"></span><div><b>${esc(job.label)}</b><p class="small">${job.status === 'queued' ? 'En attente d\'une autre tâche…' : p && job.label.startsWith('Connexion') ? 'Une fenêtre Chrome s\'est ouverte sur ton Mac : connecte-toi, elle se fermera toute seule.' : 'En cours…'}</p></div></div>`
+          : `${!on && last?.status === 'error' ? `<div class="alert">${I.alert}<div><b>Connexion non terminée</b><p class="small">La fenêtre a été fermée (ou 10 min sans connexion). Réessaie.</p></div></div>` : ''}<p class="muted small">${on ? 'Les frais réels (abonnement compris) sont lus avec ce compte. Si les frais paraissent faux, reconnecte-toi.' : 'Une fenêtre Chrome s\'ouvre sur ton Mac : connecte-toi, elle se fermera toute seule. La session reste sur ton ordinateur.'}</p>`}
+        <div class="foot"><button class="btn ${on ? 'ghost' : ''}" ${job ? 'disabled' : ''} onclick="act(this, () => api('/accounts/${p}/login', { method: 'POST' }))">${on ? 'Me reconnecter' : 'Se connecter'}</button>
+          ${on ? `<button class="btn danger" ${job ? 'disabled' : ''} onclick="clearAll(this, '${p}')">Vider tous mes paniers</button>` : ''}</div>
+      </section>`;
+    };
+    return `<div class="page-head"><div><h1>Comptes</h1><p class="muted">L'IA compare les paniers avec tes propres comptes, pour voir les vrais frais. Elle ne passe jamais commande : tu paies toi-même dans l'app.</p></div></div>
+      <div class="grid wide">${card('ubereats')}${card('deliveroo')}</div>`;
   },
 };
 
-async function rebuild(id) {
-  if (!confirm('Recréer le panier dans l\'app ? Ne le fais pas si tu as déjà passé la commande (tu aurais un panier en double).')) return;
-  try { await api(`/orders/${id}/verify`, { method: 'POST', body: { rebuild: true } }); render(); } catch (e) { alert(e.message); }
+// ---------- Morceaux de la page commande ----------
+function workPanel(job) {
+  const said = [...job.log].reverse().find(l => l.startsWith('💬'));
+  const acts = job.log.filter(l => !l.startsWith('💬')).slice(-5).map(l => l.replace(/^▶\s*/, ''));
+  const long = /panier|comparaison/i.test(job.label);
+  return `<section class="panel work" aria-live="polite">
+    <div class="now"><span class="spin"></span><div style="flex:1;min-width:0">
+      <h2>${esc(job.label)}</h2>
+      <p class="muted small">${job.queued > 0 ? `En attente, ${plural(job.queued, 'tâche')} avant` : `Depuis <span data-since="${job.startedAt || Date.now()}">${ago(Date.now() - (job.startedAt || Date.now()))}</span>, compte ${long ? '5 à 15 min' : '1 à 3 min'}. Tu peux fermer la page, ça continue.`}</p>
+      ${said ? `<p class="say">${esc(said.replace(/^💬\s*/, ''))}</p>` : ''}</div></div>
+    ${acts.length ? `<ul class="feed">${acts.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
+    <details class="more" data-k="log"><summary>Journal complet</summary><div class="log">${esc(job.log.join('\n')) || 'Démarrage…'}</div></details>
+  </section>`;
 }
-async function verify(id) { try { await api(`/orders/${id}/verify`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
-async function retry(id) { try { await api(`/orders/${id}/retry`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
-async function pick(id, basketId) { if (!confirm('Garder ce panier et vider les autres ?')) return; try { await api(`/orders/${id}/pick`, { method: 'POST', body: { basketId } }); render(); } catch (e) { alert(e.message); } }
-async function account(p, action) { try { await api(`/accounts/${p}/${action}`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
-async function made(slug) { await api('/recipes/' + slug, { method: 'POST', body: { action: 'made' } }); render(); }
-async function rate(slug) {
-  const score = document.querySelectorAll(`.stars[data-slug="${slug}"] .on`).length;
-  const note = document.querySelector(`[data-note="${slug}"]`).value.trim();
-  try {
-    if (score) await api('/recipes/' + slug, { method: 'POST', body: { action: 'rate', score, note } });
-    else if (note) await api('/recipes/' + slug, { method: 'POST', body: { action: 'note', note } });
-    else return alert('Choisis une note ou écris une remarque');
-    render();
-  } catch (e) { alert(e.message); }
-}
-document.addEventListener('click', e => {
-  const b = e.target.closest('.stars button');
-  if (b) b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', +x.dataset.v <= +b.dataset.v));
-});
 
-async function render() {
-  clearTimeout(timer);
-  const h = location.hash.slice(1) || '/';
-  const [, base, arg] = h.match(/^(\/o)\/([\w-]+)$/) || [, h];
-  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + h));
-  const view = arg ? views['/o/:id'] : views[base];
-  try { $('#app').innerHTML = view ? await view(arg) : '<p>Page introuvable.</p>'; }
-  catch (e) { $('#app').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+function menusTeaser(o, id) {
+  return `<section class="panel stack">
+    <h2>${plural(o.menus.options.length, 'menu')} t'attendent</h2>
+    <p class="muted">Prends-en un, retire les plats qui ne te disent rien, ou demande d'autres propositions.</p>
+    <div class="grid" style="margin-top:20px">${o.menus.options.map(m => `<div style="padding:18px;border-radius:14px;background:var(--sunk)">
+      <div class="row spread"><b style="font:19px var(--serif)">${esc(m.name)}</b><span class="num">${esc(m.estimate || '')}</span></div>
+      <p class="small muted" style="margin-top:6px">${esc(m.meals.map(x => x.title).join(', '))}</p></div>`).join('')}</div>
+    <div class="row" style="margin-top:20px"><a class="btn big" href="/o/${esc(id)}/menus">Choisir mon menu</a></div>
+  </section>`;
 }
-addEventListener('hashchange', render);
+
+function basketsView(o, id, nMeals) {
+  const bs = [...o.result.baskets].sort((a, b) => a.total - b.total), min = bs[0]?.total;
+  const fee = f => { const neg = /^-|−/.test(String(f.amount).trim()); return `<div class="ln ${neg ? 'neg' : 'fee'}"><span>${esc(f.label)}</span><span>${esc(f.amount)}</span></div>`; };
+  return `<section>
+    ${o.result.recommendation ? `<div class="panel" style="border-left:6px solid var(--lemon)"><p style="font:19px/1.45 var(--serif)">${esc(o.result.recommendation)}</p></div>` : ''}
+    <div class="receipts section">${bs.map(b => `<div class="receipt-wrap">${b.recommended ? '<span class="stamp">Recommandé</span>' : ''}<article class="receipt">
+      <div class="store">${esc(b.store)}</div>
+      <div class="where">${esc(app(b.platform).name)}${b.eta ? `, livré en ${esc(b.eta)}` : ''}</div>
+      <hr>
+      <div class="ln"><span>Produits</span><span>${eur(b.subtotal)}</span></div>
+      ${(b.fees || []).map(fee).join('')}
+      <hr>
+      <div class="tot"><span>Total</span><b>${eur(b.total)}</b></div>
+      ${nMeals ? `<div class="per">soit ${eur(b.total / nMeals)} par repas</div>` : ''}
+      <div class="delta ${b.total === min ? 'best' : ''}">${b.total === min ? 'Le moins cher' : `+${eur(b.total - min)} par rapport au moins cher`}</div>
+      ${b.notes ? `<hr><p class="note">${esc(b.notes)}</p>` : ''}
+      <button class="btn ${b.recommended ? '' : 'ghost'}" onclick="pick(this, ...${esc(JSON.stringify([id, b.id, b.store, app(b.platform).name]))})">Prendre ce panier</button>
+    </article></div>`).join('')}</div>
+    <p class="muted small" style="margin-top:24px">Totaux lus au moment du paiement, frais et remises d'abonnement compris. Les paniers non retenus seront vidés.</p>
+  </section>`;
+}
+
+function readyView(o, id) {
+  const b = o.result.baskets.find(x => x.id === o.pick.basketId) || {}, c = o.cart, a = app(b.platform);
+  const total = c?.total ?? b.total, meals = o.plan?.meals || [];
+  const when = c && new Date(c.checkedAt).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  const status = !c ? `<div class="alert">${I.alert}<div><b>Panier pas encore vérifié</b><p class="small">Lance une vérification avant de payer.</p></div></div>`
+    : c.missing ? `<div class="alert">${I.alert}<div><b>Ce panier n'existe plus sur ${a.name}</b><p class="small">Constaté ${esc(when)} : déjà commandé, vidé ou expiré. Recrée-le seulement si tu n'as pas encore commandé.</p></div></div>`
+    : c.unavailable?.length ? `<div class="alert">${I.alert}<div><b>${plural(c.unavailable.length, 'article indisponible', 'articles indisponibles')}</b><p class="small">${esc(c.unavailable.map(i => i.title).join(', '))}</p></div></div>`
+    : `<div class="alert ok">${I.check}<div><b>Tout est disponible</b><p class="small">${plural(c.items.length, 'article')} vérifiés ${esc(when)}.</p></div></div>`;
+  const r = o.repair;
+  const repair = r && (r.replaced?.length || r.removed?.length || r.recipeChanges?.length) ? `<section class="panel"><h3>Ce que l'IA a remplacé</h3><ul class="swaps">
+    ${(r.replaced || []).map(x => `<li><s>${esc(x.from)}</s><br><b>${esc(x.to)}</b>${x.note ? ` <span class="muted small">${esc(x.note)}</span>` : ''}</li>`).join('')}
+    ${(r.removed || []).map(x => `<li><s>${esc(x.from)}</s> retiré${x.why ? ` <span class="muted small">${esc(x.why)}</span>` : ''}</li>`).join('')}
+    ${(r.recipeChanges || []).map(x => `<li><b>${esc(x.when)}</b> <span class="muted">${esc(x.change)}</span></li>`).join('')}</ul></section>` : '';
+  return `<div class="hero-ok">
+    <div class="stack">
+      <section class="panel stack">
+        <p class="muted">Ton panier ${esc(b.store)} est rempli sur ${a.name}</p>
+        <div class="big-total">${eur(total)}</div>
+        <p class="muted small">frais compris${meals.length ? `, soit ${eur(total / meals.length)} par repas` : ''}</p>
+        ${status}
+        <div class="row" style="margin-top:8px">
+          ${c?.missing ? `<button class="btn" onclick="rebuild(this, '${esc(id)}')">${I.refresh}Recréer le panier</button>`
+            : `<a class="btn" href="${a.url}" target="_blank" rel="noopener">${I.ext}Payer sur ${a.name}</a>`}
+          ${o.hasPdf ? `<a class="btn ghost" href="/api/orders/${esc(id)}/pdf" target="_blank">${I.file}Recettes et courses (PDF)</a>` : ''}
+          ${c?.missing ? '' : `<button class="btn quiet" onclick="act(this, () => api('/orders/${esc(id)}/verify', { method: 'POST' }), 'Vérification lancée')">${I.refresh}Revérifier</button>`}
+        </div>
+        <p class="muted tiny">Un article peut passer en rupture d'ici au paiement. « Revérifier » relit le panier, fait remplacer ce qui manque et met le PDF à jour.</p>
+      </section>
+      ${repair}
+      ${c?.items?.length ? `<section class="panel"><details class="more" data-k="items"><summary>Contenu du panier (${plural(c.items.length, 'article')})</summary>
+        <ul class="items">${c.items.map(i => `<li class="${i.unavailable ? 'out' : ''}"><span>${esc(i.title)}${i.qty > 1 ? ` × ${i.qty}` : ''}</span><span class="num">${eur(i.cost ?? i.price)}</span></li>`).join('')}</ul></details></section>` : ''}
+    </div>
+    ${meals.length ? `<section class="panel"><h2 style="margin-bottom:18px">Au menu</h2><ul class="plan">${meals.map(m =>
+      `<li><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b>${m.cost != null ? `<span class="cost">${eur(m.cost)}</span>` : ''}</li>`).join('')}</ul>
+      <p class="muted tiny" style="margin-top:16px">Prix des ingrédients réellement consommés par repas ; le reste va au placard.</p>
+      <p class="small" style="margin-top:12px"><a href="#/plats">Après les repas, note les plats</a></p></section>` : ''}
+  </div>`;
+}
+
+function emptyState(title, text, href, cta) {
+  return `<div class="empty">${I.basket}<h2>${title}</h2><p>${text}</p><a class="btn" href="${href}">${cta}</a></div>`;
+}
+
+// ---------- Actions ----------
+async function pick(btn, id, basketId, store, appName) {
+  if (!await ask(`Prendre le panier ${store} ?`, `Il reste dans ton compte ${appName}. Les autres paniers créés pour cette commande sont vidés, puis l'IA vérifie le stock et prépare le PDF des recettes.`, 'Prendre ce panier')) return;
+  act(btn, () => api(`/orders/${id}/pick`, { method: 'POST', body: { basketId } }), 'Panier retenu');
+}
+async function rebuild(btn, id) {
+  if (!await ask('Recréer le panier ?', 'Si tu as déjà passé la commande, tu aurais un panier en double. Ne le fais que si tu n\'as pas encore payé.', 'Recréer le panier')) return;
+  act(btn, () => api(`/orders/${id}/verify`, { method: 'POST', body: { rebuild: true } }), 'Recréation lancée');
+}
+async function clearAll(btn, p) {
+  if (!await ask(`Vider tous tes paniers ${app(p).name} ?`, 'Y compris ceux que tu as remplis toi-même dans l\'app.', 'Tout vider')) return;
+  act(btn, () => api(`/accounts/${p}/clear`, { method: 'POST' }), 'Vidage lancé');
+}
+
+// ---------- Routeur ----------
+const NAV = [['#/', 'Commandes', I.orders], ['#/new', 'Nouvelle', I.plus, 'only-m'], ['#/plats', 'Mes plats', I.dish], ['#/profil', 'Profil', I.user], ['#/comptes', 'Comptes', I.key]];
+$('#nav').innerHTML = NAV.map(([h, t, i, c]) => `<a href="${h}" class="${c || ''}">${i}<span>${t}</span></a>`).join('');
+$('#cta-new').innerHTML = I.plus + 'Nouvelle commande';
+let last = '', lastRoute = '';
+
+async function render(quiet = false) {
+  clearTimeout(timer); mount = null;
+  const h = location.hash.slice(1) || '/';
+  const [, , arg] = h.match(/^(\/o)\/([\w-]+)$/) || [];
+  document.querySelectorAll('#nav a').forEach(a => {
+    const on = a.getAttribute('href') === '#' + h || (!!arg && a.getAttribute('href') === '#/');
+    a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
+  });
+  $('#cta-new').hidden = h === '/new' || h === '/';
+  const view = arg ? views['/o/:id'] : views[h];
+  const app$ = $('#app'), route = h;
+  const slow = !quiet && setTimeout(() => app$.innerHTML = '<div class="skeleton"></div>', 180);
+  let html;
+  try { html = view ? await view(arg) : emptyState('Page introuvable', 'Ce lien ne mène nulle part.', '#/', 'Retour aux commandes'); }
+  catch (e) { html = emptyState('Impossible de charger la page', e.message, location.hash || '#/', 'Réessayer'); }
+  clearTimeout(slow);
+  if (route !== (location.hash.slice(1) || '/')) return; // l'utilisateur a changé de page entre-temps
+  if (html === last && route === lastRoute) return;
+  // Garde l'état ouvert/fermé des « détails » et le défilement du journal entre deux rafraîchissements.
+  const open = new Set([...app$.querySelectorAll('details[open][data-k]')].map(d => d.dataset.k));
+  app$.innerHTML = html;
+  if (route === lastRoute) open.forEach(k => app$.querySelector(`details[data-k="${k}"]`)?.setAttribute('open', ''));
+  else { app$.classList.remove('fade-in'); void app$.offsetWidth; app$.classList.add('fade-in'); scrollTo(0, 0); }
+  app$.querySelectorAll('.log').forEach(l => l.scrollTop = l.scrollHeight);
+  last = html; lastRoute = route;
+  mount?.();
+  document.title = (app$.querySelector('h1')?.textContent || '') + ' — DeliveryFresh';
+}
+addEventListener('hashchange', () => render());
+addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.day > b')) { e.preventDefault(); e.target.click(); } });
 render();
 </script>
 </body>

@@ -8,6 +8,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const menus = require('./tools/menus');
 const recipes = require('./tools/recipes');
+const { sessionExpiry } = require('./tools/browser');
 
 const ROOT = __dirname;
 const ORDERS = path.join(ROOT, 'orders');
@@ -41,6 +42,7 @@ async function pump() {
   if (!job) return;
   running = job;
   job.status = 'running';
+  job.startedAt = Date.now();
   try { await job.run(job); job.status = 'done'; }
   catch (e) { job.status = 'error'; job.log.push('❌ ' + e.message); }
   running = null;
@@ -226,10 +228,13 @@ function orderView(id) {
   if (!fs.existsSync(dir)) throw Object.assign(new Error('Commande introuvable'), { status: 404 });
   const f = n => readJson(path.join(dir, n));
   const job = [...jobs].reverse().find(j => j.orderId === id);
+  const plan = f('plan.json');
+  // Titres des recettes pour l'affichage du plan (une recette manquante ne doit pas casser la page).
+  for (const m of plan?.meals || []) { try { m.title = recipes.recipe(m.recipe).title; } catch { m.title = m.recipe; } }
   return {
     id, request: f('request.json'), menus: f('menus.json'), choice: f('choice.json'), result: f('result.json'),
-    plan: f('plan.json'), pick: f('pick.json'), cart: f('cart.json'), repair: f('repair.json'), hasPdf: fs.existsSync(path.join(dir, 'recettes.pdf')),
-    job: job && { label: job.label, status: job.status, log: job.log.slice(-60), queued: jobs.filter(j => j.status === 'queued').indexOf(job) },
+    plan, pick: f('pick.json'), cart: f('cart.json'), repair: f('repair.json'), hasPdf: fs.existsSync(path.join(dir, 'recettes.pdf')),
+    job: job && { label: job.label, status: job.status, log: job.log.slice(-60), queued: jobs.filter(j => j.status === 'queued').indexOf(job), startedAt: job.startedAt },
   };
 }
 
@@ -239,7 +244,14 @@ function listOrders() {
     const v = orderView(id);
     const state = v.pick ? 'Terminée' : v.result ? 'Paniers à choisir' : v.choice?.chosen ? 'Paniers en préparation'
       : v.menus ? 'Menu à choisir' : 'Menus en préparation';
-    return { id, title: v.request?.title || v.plan?.title || id, state, busy: ['queued', 'running'].includes(v.job?.status) };
+    // step : 0 menus en préparation, 1 menu à choisir, 2 paniers (préparation ou choix), 3 terminée
+    const step = v.pick ? 3 : v.result || v.choice?.chosen ? 2 : v.menus ? 1 : 0;
+    const b = v.pick && v.result?.baskets?.find(x => x.id === v.pick.basketId);
+    return {
+      id, title: v.request?.title || v.plan?.title || id, state, step, busy: ['queued', 'running'].includes(v.job?.status),
+      error: v.job?.status === 'error', stalled: !v.job && !v.pick && !(v.menus && !v.choice?.chosen) && !v.result, meals: v.request?.slots?.length || v.plan?.meals?.length || 0, people: v.request?.people,
+      createdAt: v.request?.createdAt, menu: v.choice?.chosen?.name, store: b?.store, platform: b?.platform, total: v.cart?.total ?? b?.total,
+    };
   });
 }
 
@@ -285,6 +297,7 @@ const readBody = req => new Promise((resolve, reject) => {
 
 const routes = [
   ['GET', /^\/$/, (req, res) => send(res, 200, fs.readFileSync(path.join(ROOT, 'web', 'index.html')), 'text/html; charset=utf-8')],
+  ['GET', /^\/style\.css$/, (req, res) => send(res, 200, fs.readFileSync(path.join(ROOT, 'web', 'style.css')), 'text/css; charset=utf-8')],
 
   ['GET', /^\/o\/([\w-]+)\/menus$/, (req, res, id) => {
     const m = readJson(path.join(orderDir(id), 'menus.json'));
@@ -296,8 +309,8 @@ const routes = [
   ['PUT', /^\/api\/profile$/, async (req, res) => { const p = cleanProfile(await readBody(req)); writeJson(PROFILE, p); send(res, 200, p); }],
 
   ['GET', /^\/api\/accounts$/, (req, res) => {
-    const st = p => fs.existsSync(path.join(ROOT, '.session', p, 'Default', 'Cookies'));
-    send(res, 200, { ubereats: st('ubereats'), deliveroo: st('deliveroo'), busy: running?.label || null });
+    const exp = { ubereats: sessionExpiry('ubereats'), deliveroo: sessionExpiry('deliveroo') };
+    send(res, 200, { ubereats: exp.ubereats > 0, deliveroo: exp.deliveroo > 0, expires: exp, busy: running?.label || null });
   }],
   ['POST', /^\/api\/accounts\/(ubereats|deliveroo)\/(login|clear)$/, (req, res, p, action) => {
     const job = action === 'login'

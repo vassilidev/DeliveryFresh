@@ -13,6 +13,9 @@
   user-agent sans « HeadlessChrome » (sinon Cloudflare bloque) ; Uber et Deliveroo passent ainsi. (2026-10-07)
 - Un Chrome lancé hors Playwright doit avoir `--use-mock-keychain --password-store=basic` (comme Playwright), sinon il ne
   peut pas déchiffrer les cookies et **efface la session** (vécu : reconnexion Uber Eats nécessaire). (2026-10-07)
+- Cookie de connexion : Uber Eats `sid` (.ubereats.com, ~6 mois), Deliveroo `consumer_auth_token` (deliveroo.fr, ~3 mois).
+  Son expiration se lit dans `.session/<p>/Default/Cookies` (SQLite, noms/dates en clair) sans lancer Chrome :
+  `browser.sessionExpiry()`. `login.js` ferme la fenêtre dès qu'il apparaît. (2026-10-07)
 - Le match par mot-clé ramène n'importe quoi (pâtée pour chat « filets de poulet », shampooing « aux œufs », chips « poivron ») :
   toujours relire les choix. (2026-10-07)
 - Une requête vide ne veut pas dire « absent » : « oeufs frais » ne trouvait rien chez Auchan/Deliveroo, « oeufs » si. (2026-10-07)

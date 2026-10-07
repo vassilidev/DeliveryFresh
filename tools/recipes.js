@@ -56,23 +56,25 @@ function html(plan) {
   const costs = plan.meals.map(m => m.cost).filter(c => c != null);
   const shopping = plan.shopping?.length ? `<section class="card"><header><div class="when">Courses</div><h1>${esc(plan.title)}</h1>
     <p class="sub">${esc(plan.shoppingNote || '')}</p>${plan.paid != null && plan.meals.length ? `<div class="badges"><span>${euro(plan.paid / plan.meals.length)} payés par repas</span>${costs.length ? `<span>≈ ${euro(costs.reduce((a, b) => a + b, 0) / costs.length)} réellement consommés par repas (le reste va au placard)</span>` : ''}</div>` : ''}</header><div class="body"><ul class="shop">${plan.shopping.map(s => `<li><span>☐ ${esc(s.name)}</span><span>${esc(s.qty || '')}</span><span>${s.price != null ? s.price.toFixed(2).replace('.', ',') + ' €' : ''}</span></li>`).join('')}</ul></div></section>` : '';
-  return `<!doctype html><html lang="fr"><meta charset="utf-8"><style>
+  return `<!doctype html><html lang="fr"><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=Young+Serif&display=swap"><style>
 @page { size: A4; margin: 0 }
-* { box-sizing: border-box } body { margin: 0; font: 11pt/1.45 -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1f2a1f }
+* { box-sizing: border-box } body { margin: 0; font: 11pt/1.45 "Hanken Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif; color: #15231b }
+h1, h2, .num { font-family: "Young Serif", Georgia, serif; font-weight: 400 }
 .card { page-break-after: always; min-height: 297mm; padding: 0 0 14mm }
-header { background: #91c11e; color: #fff; padding: 14mm 16mm 10mm; position: relative }
+header { background: #2e6a4c; color: #fff; padding: 14mm 16mm 10mm; position: relative }
 .when { text-transform: uppercase; letter-spacing: .12em; font-size: 9pt; font-weight: 700; opacity: .9 }
 .num { position: absolute; right: 16mm; top: 12mm; font-size: 44pt; font-weight: 800; opacity: .35 }
-h1 { margin: 4px 0 2px; font-size: 24pt; line-height: 1.1 } .sub { margin: 0 0 10px; font-size: 12pt; opacity: .95 }
+h1 { margin: 4px 0 2px; font-size: 24pt; line-height: 1.1; padding-right: 22mm } .sub { margin: 0 0 10px; font-size: 12pt; opacity: .95 }
 .badges span { display: inline-block; background: rgba(255,255,255,.22); border-radius: 99px; padding: 3px 10px; margin: 0 6px 4px 0; font-size: 9pt; font-weight: 600 }
 .body { display: flex; gap: 10mm; padding: 10mm 16mm 0 }
-aside { flex: 0 0 62mm; background: #f3f7ea; border-radius: 8px; padding: 6mm } aside ul { list-style: none; padding: 0; margin: 0 }
-aside li { padding: 4px 0; border-bottom: 1px solid #dfe8cc } aside li.pantry { color: #7a857a; font-style: italic } aside b { color: #4d7a00 }
-h2 { margin: 0 0 8px; font-size: 13pt; color: #4d7a00 }
+aside { flex: 0 0 62mm; background: #eef3ee; border-radius: 8px; padding: 6mm } aside ul { list-style: none; padding: 0; margin: 0 }
+aside li { padding: 4px 0; border-bottom: 1px solid #dbe2da } aside li.pantry { color: #5d6b63; font-style: italic } aside b { color: #2e6a4c }
+h2 { margin: 0 0 8px; font-size: 13pt; color: #2e6a4c }
 ol { flex: 1; margin: 0; padding: 0; list-style: none; counter-reset: s }
-ol li { counter-increment: s; position: relative; padding: 0 0 12px 40px } ol li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: #91c11e; color: #fff; font-weight: 800; display: grid; place-items: center }
+ol li { counter-increment: s; position: relative; padding: 0 0 12px 40px } ol li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: #2e6a4c; color: #fff; font-weight: 800; display: grid; place-items: center }
 h3 { margin: 3px 0 2px; font-size: 11.5pt } ol p { margin: 0 }
-.tip { margin: 6mm 16mm 0; padding: 5mm 6mm; background: #fff6e0; border-left: 4px solid #f5a623; border-radius: 6px } .tip b { color: #b36b00; margin-right: 6px }
+.tip { margin: 6mm 16mm 0; padding: 5mm 6mm; background: #fdf3c9; border-left: 4px solid #f5cf4a; border-radius: 6px } .tip b { color: #6b5400; margin-right: 6px }
 .shop { list-style: none; padding: 0; margin: 0; flex: 1 } .shop li { display: grid; grid-template-columns: 1fr 34mm 22mm; padding: 6px 0; border-bottom: 1px solid #e5e5e5 } .shop li span:last-child { text-align: right; font-weight: 600 }
 </style><body>${shopping}${plan.meals.map(card).join('')}</body></html>`;
 }

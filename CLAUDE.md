@@ -24,7 +24,9 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
      et `node tools/menus.js history` (menus/plats refusés + remarques → ne pas les reproposer tels quels).
    - Chaque proposition : repas rapides, rassasiants, compatibles équipements (`profile.equipment` / `noEquipment`),
      ingrédients qui se recoupent (batch, restes du soir → midi, riz cuit en double…), avec estimation de prix.
-     Propositions vraiment différentes (ex. tex-mex / pâtes one-pot / asiatique). Format : `examples/menus.example.json`.
+     **Chaque menu mélange les cuisines, féculents et protéines** (pas « 5 repas italiens ») en partageant des
+     ingrédients pivots ; les propositions diffèrent par leur panier, pas leur thème : voir `knowledge/menus.md`.
+     Format : `examples/menus.example.json`.
    - Écris `orders/<date>/menus.json` puis `node tools/menus.js choose orders/<date>/menus.json` : la page s'ouvre,
      l'utilisateur répond par menu « Je prends / Pas pour moi / Plus tard », peut barrer un plat (✕) et commenter.
      Le résultat (JSON) est mémorisé dans `memory/menus.json`.
@@ -68,7 +70,7 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
 - `request.json` : `{ title, slots[], people, exceptions, extras, wishes, budget, platforms[] }`.
   `people` remplace `profile.people` pour cette commande ; `extras` (courses perso) vont dans la liste ET dans chaque panier ;
   `platforms` = plateformes à comparer.
-- Étape **menus** → écris `menus.json` (format `examples/menus.example.json`, 2-3 propositions, un repas par créneau de `slots`,
+- Étape **menus** → écris `menus.json` (règles de `knowledge/menus.md`, format `examples/menus.example.json`, 2-3 propositions, un repas par créneau de `slots`,
   `recipe` = slug si la recette existe déjà). Si `choice.json` existe : propositions refusées → fais autre chose.
 - Étape **paniers** → `choice.json` = `{ chosen: { id, name, rejectedMeals[], comment, meals }, decisions[], note }`.
   Remplace les plats de `rejectedMeals` (dans l'esprit des remarques), écris recettes + `plan.json` (`{ title, meals: [{ when, recipe }] }`),

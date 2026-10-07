@@ -1,20 +1,20 @@
 {
  "title": "Menus — mercredi midi → vendredi midi",
  "options": [
-  {"id": "A", "name": "Tex-mex & curry", "pitch": "Batch chili le mercredi soir, restes le jeudi midi.", "estimate": "≈ 45 €", "tags": ["batch", "rassasiant"],
+  {"id": "A", "name": "Tour du monde au poulet", "pitch": "Pivots : poulet, riz cuit en double, poivrons, crème. 3 cuisines, 3 féculents.", "estimate": "≈ 45 €", "tags": ["varié", "batch riz"],
    "meals": [
-    {"when": "Mercredi midi", "title": "Wraps poulet paprika", "desc": "Poulet poêlé, crudités, fromage", "time": 15, "recipe": "wraps-poulet-croquants"},
-    {"when": "Mercredi soir", "title": "Chili con carne", "desc": "2 portions, riz basmati", "time": 25, "recipe": "chili-con-carne"},
-    {"when": "Jeudi midi", "title": "Reste de chili", "desc": "Micro-ondes, 4 min", "time": 4, "recipe": "chili-reste-micro-ondes"}]},
-  {"id": "B", "name": "Pâtes & poêlées", "pitch": "Que des plats en une casserole.", "estimate": "≈ 38 €", "tags": ["one-pot", "économique"],
+    {"when": "Mercredi midi", "title": "Wraps poulet paprika", "desc": "Mexicain · poulet poêlé, poivron, crème", "time": 15, "recipe": "wraps-poulet-croquants"},
+    {"when": "Mercredi soir", "title": "Poulet curry-coco", "desc": "Indien · riz cuit en double", "time": 20, "recipe": "poulet-curry-coco"},
+    {"when": "Jeudi midi", "title": "Riz sauté œufs-lardons", "desc": "Asiatique · riz de la veille, reste de poivron", "time": 12, "recipe": "riz-saute-oeufs-lardons"}]},
+  {"id": "B", "name": "Bœuf & légumineuses", "pitch": "Pivots : bœuf haché, tomates, oignons rouges, feta.", "estimate": "≈ 40 €", "tags": ["varié", "rassasiant"],
    "meals": [
-    {"when": "Mercredi midi", "title": "Pâtes au thon & tomate", "desc": "Sauce minute, parmesan", "time": 15},
-    {"when": "Mercredi soir", "title": "Poêlée saucisses-pommes de terre", "desc": "Oignons, paprika", "time": 25},
-    {"when": "Jeudi midi", "title": "One-pot pâtes poulet-crème", "desc": "Champignons, épinards", "time": 20}]},
-  {"id": "C", "name": "Asiatique express", "pitch": "Woks rapides, riz et nouilles.", "estimate": "≈ 48 €", "tags": ["rapide"],
+    {"when": "Mercredi midi", "title": "Salade grecque & pois chiches", "desc": "Grec · feta, concombre, oignon rouge", "time": 10},
+    {"when": "Mercredi soir", "title": "Chili con carne", "desc": "Mexicain · riz basmati", "time": 25, "recipe": "chili-con-carne"},
+    {"when": "Jeudi midi", "title": "Spaghetti bolognaise", "desc": "Italien · même bœuf, mêmes tomates", "time": 25, "recipe": "spaghetti-bolognaise"}]},
+  {"id": "C", "name": "Poisson & végé express", "pitch": "Pivots : œufs, saumon, citron, yaourt. Moins de 15 min.", "estimate": "≈ 48 €", "tags": ["rapide", "léger"],
    "meals": [
-    {"when": "Mercredi midi", "title": "Nouilles sautées bœuf", "desc": "Sauce soja, poivron", "time": 15},
-    {"when": "Mercredi soir", "title": "Poulet curry-coco", "desc": "Riz cuit en double", "time": 20, "recipe": "poulet-curry-coco"},
-    {"when": "Jeudi midi", "title": "Riz sauté œufs-lardons", "desc": "Riz de la veille", "time": 12, "recipe": "riz-saute-oeufs-lardons"}]}
+    {"when": "Mercredi midi", "title": "Shakshuka & pain pita", "desc": "Moyen-Orient · œufs, poivron, tomates", "time": 15},
+    {"when": "Mercredi soir", "title": "Bowl saumon teriyaki", "desc": "Japonais · riz, concombre, sésame", "time": 15},
+    {"when": "Jeudi midi", "title": "Pommes de terre sautées, œufs & salade", "desc": "Français · yaourt-citron en sauce", "time": 15}]}
  ]
 }
