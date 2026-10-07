@@ -3,7 +3,7 @@
 //   stores [requête]                 magasins livrables à l'adresse du profil (défaut : "supermarché")
 //   search <storeUuid> <q1> [q2...]  produits d'un magasin pour chaque requête
 //   carts                            paniers en cours (un par magasin)
-//   fill <basket.json>               remplit le panier d'un magasin (basket = { storeUuid, items: [résultat de search + qty | grams si byWeight] })
+//   fill <basket.json>               remplit le panier d'un magasin (idempotent : met chaque article à la quantité voulue) (basket = { storeUuid, items: [résultat de search + qty | grams si byWeight] })
 //   qty <draftUuid> <cartItemUuid> <qté>  change la quantité (0 = supprimer)
 //   remove <draftUuid> <cartItemUuid>     supprime un article
 //   clear <draftUuid|all>            vide le panier (all = tous les paniers du compte)
@@ -19,7 +19,12 @@ async function session() {
   const { ctx, page } = await open('ubereats');
   await page.goto(BASE + '/fr', { waitUntil: 'domcontentloaded' });
   await waitCloudflare(page);
-  const api = async (ep, body = {}, retries = 2) => {
+  let last = 0;
+  const api = async (ep, body = {}, retries = 2, pause = 15) => {
+    // Rythme : 300 ms minimum entre deux appels (Uber freine les rafales : "too_many_requests").
+    const gap = last + 300 - Date.now();
+    if (gap > 0) await page.waitForTimeout(gap);
+    last = Date.now();
     const r = await page.evaluate(async ([ep, body]) => {
       const res = await fetch(`/_p/api/${ep}?localeCode=fr`, {
         method: 'POST', headers: { 'content-type': 'application/json', 'x-csrf-token': 'x' }, body: JSON.stringify(body),
@@ -33,6 +38,14 @@ async function session() {
     }
     if (j.status !== 'success') {
       if (String(j.data?.code) === '401') throw new Error('Session Uber Eats expirée : reconnecte-toi (interface : Comptes → Se connecter, ou node tools/login.js ubereats)');
+      if (/too_many_requests|rate.?limit/i.test(JSON.stringify(j.data))) {
+        if (pause <= 60) {
+          console.error(`⏳ Uber Eats limite les requêtes : pause ${pause} s puis nouvel essai`);
+          await page.waitForTimeout(pause * 1000);
+          return api(ep, body, retries, pause * 2);
+        }
+        throw new Error('Uber Eats limite les requêtes (trop d\'appels récents) : réessaie dans quelques minutes');
+      }
       throw new Error(`${ep}: ${JSON.stringify(j.data).slice(0, 300)}`);
     }
     return j.data;
@@ -140,8 +153,19 @@ async function fill(api, { storeUuid, items }) {
   const existing = (await carts(api)).find(c => c.storeUuid === storeUuid);
   const cartItems = items.map(it => cartItem(storeUuid, it));
   if (existing) {
+    // Idempotent : un article déjà présent est mis à la quantité voulue (pas ajouté une 2e fois) → relancer une
+    // étape interrompue ne double rien ; les autres articles du panier ne sont jamais retirés.
     const d = await api('getDraftOrderByUuidV1', { draftOrderUuid: existing.draftUuid });
-    await api('addItemsToDraftOrderV2', { draftOrderUUID: existing.draftUuid, cartUUID: d.shoppingCart.cartUuid, items: cartItems, shouldUpdateDraftOrderMetadata: true });
+    const have = new Map(d.shoppingCart.items.map(i => [i.uuid, i]));
+    const toAdd = [];
+    for (const [k, it] of items.entries()) {
+      const cur = have.get(it.itemUuid);
+      if (!cur) toAdd.push(cartItems[k]);
+      // ponytail: grammage d'un article au poids déjà présent non modifié (le retirer puis le remettre si besoin)
+      else if (!it.byWeight && cur.quantity !== (it.qty || 1))
+        await api('updateItemInDraftOrderV2', { draftOrderUUID: existing.draftUuid, cartUUID: d.shoppingCart.cartUuid, item: { ...cur, quantity: it.qty || 1 } });
+    }
+    if (toAdd.length) await api('addItemsToDraftOrderV2', { draftOrderUUID: existing.draftUuid, cartUUID: d.shoppingCart.cartUuid, items: toAdd, shouldUpdateDraftOrderMetadata: true });
     return existing.draftUuid;
   }
   const d = await api('createDraftOrderV2', {

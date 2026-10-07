@@ -3,7 +3,7 @@
 //   stores                         commerces (courses) livrables à l'adresse du profil
 //   search <menuPath> <q1> [q2...] produits d'un commerce (menuPath = /menu/Lyon/lyon-ztl/xxx)
 //   basket <menuPath>              panier du commerce + détail des frais et total (SANS commander)
-//   fill <basket.json>             ajoute les articles (basket = { menuPath, items: [résultat de search + qty] })
+//   fill <basket.json>             met les articles dans le panier (idempotent : quantité voulue, pas d'ajout en double) (basket = { menuPath, items: [résultat de search + qty] })
 //   qty <menuPath> <legacyId> <qté> change la quantité (0 = supprimer)
 //   clear <menuPath|all>           vide le panier du commerce (all = tous les paniers en cours)
 //   verify <menuPath>              relit le panier et re-contrôle la disponibilité de chaque article dans le catalogue
@@ -34,12 +34,22 @@ async function session() {
   for (let i = 0; i < 20 && !headers; i++) await page.waitForTimeout(500);
   if (!headers) throw new Error('En-têtes Deliveroo non capturés');
   const H = Object.fromEntries(Object.entries(headers).filter(([k]) => !/^(sec-|user-agent|referer|accept-encoding)/.test(k)));
-  const gql = async (endpoint, query, variables) => {
+  let last = 0;
+  const gql = async (endpoint, query, variables, pause = 15) => {
+    const gap = last + 300 - Date.now(); // rythme : 300 ms minimum entre deux appels
+    if (gap > 0) await page.waitForTimeout(gap);
+    last = Date.now();
     const r = await page.evaluate(async ([url, H, body]) => {
       const res = await fetch(url, { method: 'POST', headers: H, body });
       return res.status + '\n' + await res.text();
     }, [API + endpoint, H, JSON.stringify({ query, variables })]);
     const [status, ...rest] = r.split('\n');
+    if (status === '429') {
+      if (pause > 60) throw new Error('Deliveroo limite les requêtes (trop d\'appels récents) : réessaie dans quelques minutes');
+      console.error(`⏳ Deliveroo limite les requêtes : pause ${pause} s puis nouvel essai`);
+      await page.waitForTimeout(pause * 1000);
+      return gql(endpoint, query, variables, pause * 2);
+    }
     const j = JSON.parse(rest.join('\n'));
     if (status !== '200' || j.errors) throw new Error(`${endpoint} ${status}: ${JSON.stringify(j.errors || j).slice(0, 300)}`);
     return j.data;
@@ -165,11 +175,20 @@ async function basket(s, menuPath) {
   };
 }
 
+// Idempotent : un article déjà présent est mis à la quantité voulue (relancer une étape ne double rien).
 async function fill(s, { menuPath, items }) {
   const st = await storeInfo(s.page, menuPath, s.loc);
-  for (const it of items)
-    await s.gql('/consumer/basket/graphql', `mutation m($o: BasketOptionsInput!, $i: AddBasketItemInput!) { add_basket_item(options: $o, item: $i) { ${ITEMS} } }`,
-      { o: { ...basketOptions(s.loc, st.drnId), force_new: false, confirm_user_age_over_18: false }, i: { menu_item_drn_id: it.drnId, quantity: it.qty || 1, modifier_groups: [] } });
+  const o = basketOptions(s.loc, st.drnId);
+  const { get_basket_page: cur } = await s.gql('/consumer/basket/graphql', 'query q($o: BasketOptionsInput!) { get_basket_page(options: $o) { ' + ITEMS + ' } }', { o });
+  const have = new Map(cur.meta.basket.items.map(i => [i.menu_item_drn_id, i]));
+  for (const it of items) {
+    const h = have.get(it.drnId), qty = it.qty || 1;
+    if (h && h.quantity === qty) continue;
+    if (h) await s.gql('/consumer/basket/graphql', `mutation m($o: BasketOptionsInput!, $i: EditBasketItemInput!) { edit_basket_item(options: $o, item: $i) { __typename } }`,
+      { o, i: { legacy_id: h.legacy_id, quantity: qty } });
+    else await s.gql('/consumer/basket/graphql', `mutation m($o: BasketOptionsInput!, $i: AddBasketItemInput!) { add_basket_item(options: $o, item: $i) { ${ITEMS} } }`,
+      { o: { ...o, force_new: false, confirm_user_age_over_18: false }, i: { menu_item_drn_id: it.drnId, quantity: qty, modifier_groups: [] } });
+  }
   return basket(s, menuPath);
 }
 

@@ -1,5 +1,7 @@
 // Compare une liste de courses sur plusieurs magasins Uber Eats et Deliveroo (sous-total produits).
-// Usage : node tools/compare.js <list.json> <targets.json> <sortie.json> [--refresh]
+// Usage : node tools/compare.js <list.json> <targets.json> <sortie.json> [--probe] [--refresh]
+//   --probe : SONDAGE, ne cherche que les articles marqués "probe": true (les 3-5 qui pèsent le plus dans l'addition)
+//   pour classer beaucoup de magasins avec peu de requêtes ; relancer ensuite sans --probe sur les 2-3 meilleurs.
 //   Les résultats bruts sont mis en cache dans <sortie>.raw.json : relancer sans --refresh recalcule les choix
 //   instantanément (utile pour ajuster match/exclude). Les requêtes absentes du cache sont re-téléchargées.
 //   list.json    : [{ name, need, query, match (regex), exclude (regex) }]
@@ -74,7 +76,11 @@ if (require.main === module) {
   (async () => {
     const [listFile, targetsFile, outFile] = process.argv.slice(2);
     const rawFile = outFile.replace(/\.json$/, '.raw.json');
-    const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
+    let list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
+    if (process.argv.includes('--probe')) {
+      list = list.filter(i => i.probe);
+      if (!list.length) throw new Error('--probe : marque 3 à 5 articles "probe": true dans la liste (les plus chers)');
+    }
     const targets = JSON.parse(fs.readFileSync(targetsFile, 'utf8'));
     const cached = !process.argv.includes('--refresh') && fs.existsSync(rawFile) ? JSON.parse(fs.readFileSync(rawFile, 'utf8')) : {};
     const keep = new Set([...(targets.ubereats || []).map(i => 'ubereats|' + i), ...(targets.deliveroo || []).map(i => 'deliveroo|' + i)]);

@@ -33,17 +33,22 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
      `recipes/<slug>.json` (même format) et le plan `orders/<date>/plan.json`.
 2. **Liste** `orders/<date>/list.json` : besoins **calculés en grammes** depuis les recettes × personnes
    (cf. `knowledge/quantites.md`), + `query`/`match`/`exclude`/`min`/`units` pour la recherche.
-3. **Magasins** : `node tools/ubereats.js stores` et `node tools/deliveroo.js stores` → `targets.json` (≥ 4-6 magasins).
-4. **Pré-tri** : `node tools/compare.js list.json targets.json compare.json` (cache `compare.raw.json`, relançable
-   instantanément). Le choix auto est **indicatif** (il ne connaît pas la qualité) : sers-t'en pour repérer les magasins.
-   Trous dans les résultats ? Ajoute des requêtes alternatives (`oeufs` vs `oeufs frais`…) plutôt que conclure « absent ».
-5. **Composer 4 à 6 paniers à la main** (`baskets/<plateforme>-<magasin>.picks.json` → `node tools/basket.js`) :
+3. **Magasins** : `node tools/ubereats.js stores` et `node tools/deliveroo.js stores` → `targets.json` (6-8 magasins).
+4. **Économiser les requêtes** (les plateformes freinent : `too_many_requests`) :
+   - **Sondage** : marque `"probe": true` les 3-5 articles qui pèsent le plus dans l'addition (viande, poisson, fromage,
+     produits de marque…), puis `node tools/compare.js list.json targets.json compare.json --probe`.
+   - Garde les **2-3 meilleurs magasins** (au moins 1 par plateforme si c'est serré) dans `targets.json`, puis
+     **comparaison complète** sans `--probe` (le cache `compare.raw.json` évite de refaire le sondage).
+   - Le choix auto est **indicatif** (il ne connaît pas la qualité). Trous dans les résultats ? Requêtes alternatives
+     (`oeufs` vs `oeufs frais`…) plutôt que conclure « absent ». Pas de recherche inutile, réutilise le cache.
+5. **Composer 2-3 paniers à la main** (`baskets/<plateforme>-<magasin>.picks.json` → `node tools/basket.js`) :
    - couvrir chaque besoin avec le bon conditionnement (prix au kg, taille vs besoin, surplus utile ou gaspillé) ;
    - qualité correcte (marque distributeur OK, éviter premier prix douteux sur la viande) ;
    - substitutions intelligentes si absent (dinde ↔ poulet, tomates pelées ↔ concassées, paprika+cumin ↔ mix chili) ;
    - produits au poids (Uber, `byWeight`) : donne `grams` ; homonymes (Deliveroo) : précise `price`.
 6. **Frais réels + stock réel** : les frais n'apparaissent qu'au paiement → remplis chaque panier :
-   `node tools/ubereats.js fill <basket.json>` / `node tools/deliveroo.js fill <basket.json>`. La sortie est celle de
+   `node tools/ubereats.js fill <basket.json>` / `node tools/deliveroo.js fill <basket.json>` (idempotent : relancer ne
+   double rien). La sortie est celle de
    `verify` (total, frais, `unavailable`). **La recherche peut montrer en stock un article en rupture** : tout article de
    `unavailable` doit être remplacé (retirer, essayer un autre candidat, revérifier) avant de présenter le panier.
 7. **Présente** un tableau (produits, frais, total, qualité, manques/substitutions) + ta recommandation.
@@ -67,7 +72,7 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
   `recipe` = slug si la recette existe déjà). Si `choice.json` existe : propositions refusées → fais autre chose.
 - Étape **paniers** → `choice.json` = `{ chosen: { id, name, rejectedMeals[], comment, meals }, decisions[], note }`.
   Remplace les plats de `rejectedMeals` (dans l'esprit des remarques), écris recettes + `plan.json` (`{ title, meals: [{ when, recipe }] }`),
-  liste, comparaison, 4-6 paniers remplis (`baskets/<id>.json` via basket.js), puis `result.json` :
+  liste, sondage puis comparaison (étape 4), 2-3 paniers remplis (`baskets/<id>.json` via basket.js), puis `result.json` :
   ```json
   { "recommendation": "phrase courte",
     "baskets": [{ "id": "ue-intermarche", "platform": "ubereats", "store": "Intermarché Tronchet",
@@ -110,5 +115,6 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
 | `check.js` | auto-tests hors-ligne de la logique (`npm run check`) |
 
 Fichiers privés (ignorés par git) : `profile.json`, `.session/`, `memory/`, `orders/`.
-Chrome tourne caché (hors écran) et partagé entre les outils ; `node tools/browser.js stop` le ferme.
+Chrome tourne invisible (headless) et partagé entre les outils ; `node tools/browser.js stop` le ferme,
+`SHOW_BROWSER=1` le rend visible (débogage).
 `SESSION=probe` devant une commande = profil navigateur alternatif (tests).

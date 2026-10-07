@@ -52,8 +52,8 @@ Pour arrêter l'app : `Ctrl + C` dans le terminal.
    - **✕ sur un plat** : « ce menu mais pas ce plat », il sera remplacé.
 
    Si tu ne prends aucun menu, l'IA en propose de nouveaux en tenant compte de tes refus.
-4. **Attends 5 à 15 min** : l'IA cherche les produits dans 4 à 6 magasins, choisit les bons formats
-   et les bonnes quantités, remplit chaque panier et lit le **total réel au paiement**.
+4. **Attends 5 à 15 min** : l'IA sonde 6 à 8 magasins sur les articles les plus chers, compare en détail les 2-3 meilleurs,
+   choisit les bons formats et les bonnes quantités, remplit ces paniers et lit le **total réel au paiement**.
 5. **Choisis ton panier** dans le tableau comparatif : total payé, **prix par repas**, remarques ; le recommandé est
    surligné. Clique sur **Je prends** : l'app garde ce panier, vide les autres, **vérifie le stock réel**, fait
    remplacer par l'IA les articles devenus indisponibles et génère le **PDF des recettes** (liste de courses + une fiche
@@ -74,9 +74,10 @@ Les menus mis de côté (« Plus tard ») sont listés en haut de la page.
 
 ## 6. Chrome en arrière-plan
 
-Pendant les recherches, l'app utilise un Chrome **caché, hors de l'écran**, qui ne prend pas le focus : tu peux
-continuer à utiliser ton ordinateur. Il reste ouvert entre deux étapes (c'est ce qui rend tout plus rapide) et se ferme
-seul après 10 minutes sans usage. Seule la **connexion** ouvre une fenêtre visible.
+Pendant les recherches, l'app utilise un Chrome **invisible** (sans fenêtre) : tu peux continuer à utiliser ton
+ordinateur normalement. Il reste ouvert entre deux étapes (c'est ce qui rend tout plus rapide) et se ferme seul après
+10 minutes sans usage. Seule la **connexion** ouvre une fenêtre visible. Pour voir ce qu'il fait (débogage) :
+`SHOW_BROWSER=1 npm start`.
 
 ## 7. Comment l'IA est utilisée
 
@@ -113,6 +114,7 @@ L'app n'est accessible que depuis ton Mac. Le lancer avec `HOST=0.0.0.0 npm star
 | « Session expirée » | **Comptes → Se connecter**, puis relance l'étape |
 | « Introuvable » sur un bouton | le serveur tourne avec une ancienne version : `Ctrl + C` puis `npm start` |
 | Un Chrome caché semble bloqué | `node tools/browser.js stop`, puis relance l'étape |
+| « limite les requêtes » / `too_many_requests` | Uber ou Deliveroo freine après beaucoup d'appels : attends 10-15 min puis **Relancer** (rien n'est doublé) |
 | Changement d'adresse | modifie-la dans **Profil**, elle est prise en compte automatiquement |
 | Un outil casse du jour au lendemain | les sites ont changé leur fonctionnement interne : ouvre `claude` dans le dossier et demande de réparer l'outil |
 

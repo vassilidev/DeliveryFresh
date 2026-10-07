@@ -1,9 +1,9 @@
-// Chrome partagé par plateforme : lancé une fois, HORS ÉCRAN et sans voler le focus, puis réutilisé par tous les outils
-// (connexion CDP). Il garde la session (profil .session/<platform>) et se ferme seul après IDLE_MIN minutes sans usage.
+// Chrome partagé par plateforme : lancé une fois, INVISIBLE (headless, sans fenêtre), puis réutilisé par tous les outils
+// (connexion CDP). SHOW_BROWSER=1 : fenêtre visible (débogage). Il garde la session (profil .session/<platform>) et se ferme seul après IDLE_MIN minutes sans usage.
 // La connexion (login.js) utilise une fenêtre visible : open(platform, { visible: true }) ferme d'abord le Chrome caché.
 //   node tools/browser.js stop [platform]   ferme le(s) Chrome caché(s)
 const { chromium } = require('playwright');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -30,15 +30,20 @@ function chromePath() {
 
 const connect = platform => chromium.connectOverCDP(`http://127.0.0.1:${port(platform)}`, { timeout: 3000 });
 
+// Headless : on retire "HeadlessChrome" de l'identité du navigateur, sinon Cloudflare (Uber Eats) bloque.
+function userAgent(exe) {
+  let major = '0';
+  try { major = execFileSync(exe, ['--version'], { encoding: 'utf8' }).match(/(\d+)\./)[1]; } catch {}
+  const os = { darwin: 'Macintosh; Intel Mac OS X 10_15_7', win32: 'Windows NT 10.0; Win64; x64' }[process.platform] || 'X11; Linux x86_64';
+  return `Mozilla/5.0 (${os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`;
+}
+
 async function startHidden(platform) {
   fs.mkdirSync(profileDir(platform), { recursive: true });
-  const args = [...ARGS, `--remote-debugging-port=${port(platform)}`, `--user-data-dir=${profileDir(platform)}`,
-    '--window-position=-3000,-3000', '--window-size=1400,950', 'about:blank'];
   const exe = chromePath();
-  // macOS : `open -g -n` lance une instance séparée en arrière-plan (pas de vol de focus).
-  const child = process.platform === 'darwin' && exe.includes('.app/')
-    ? spawn('open', ['-g', '-n', '-a', exe.split('.app/')[0] + '.app', '--args', ...args], { detached: true, stdio: 'ignore' })
-    : spawn(exe, args, { detached: true, stdio: 'ignore' });
+  const args = [...ARGS, `--remote-debugging-port=${port(platform)}`, `--user-data-dir=${profileDir(platform)}`, '--window-size=1400,950',
+    ...(process.env.SHOW_BROWSER ? [] : ['--headless=new', `--user-agent=${userAgent(exe)}`]), 'about:blank'];
+  const child = spawn(exe, args, { detached: true, stdio: 'ignore' });
   child.unref();
   // Surveillant détaché : ferme ce Chrome après IDLE_MIN minutes sans usage.
   spawn(process.execPath, [__filename, 'reap', platform], { detached: true, stdio: 'ignore', env: process.env }).unref();

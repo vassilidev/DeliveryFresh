@@ -6,6 +6,11 @@
 - Navigateur : Chrome visible + profil persistant (`.session/<plateforme>`). En headless, Cloudflare bloque Uber Eats. (2026-10-07)
 - Un profil Chrome ne peut être ouvert que par un process à la fois → un Chrome partagé par plateforme, lancé hors écran
   (`open -g -n` sur macOS = pas de vol de focus), auquel les outils se connectent en CDP : ~0,7 s au lieu de ~5 s par appel. (2026-10-07)
+- Trop d'appels en peu de temps → Uber répond `bd.error.too_many_requests` (vécu : comparaison 10 magasins × 19 articles
+  + 6 remplissages + remplacements). Parade : sondage des 3-5 articles chers, comparaison complète sur 2-3 magasins,
+  2-3 paniers remplis ; rythme 300 ms + pauses 15/30/60 s dans les outils. (2026-10-07)
+- macOS ramène à l'écran les fenêtres placées hors écran : pour un Chrome invisible, utiliser `--headless=new` avec un
+  user-agent sans « HeadlessChrome » (sinon Cloudflare bloque) ; Uber et Deliveroo passent ainsi. (2026-10-07)
 - Un Chrome lancé hors Playwright doit avoir `--use-mock-keychain --password-store=basic` (comme Playwright), sinon il ne
   peut pas déchiffrer les cookies et **efface la session** (vécu : reconnexion Uber Eats nécessaire). (2026-10-07)
 - Le match par mot-clé ramène n'importe quoi (pâtée pour chat « filets de poulet », shampooing « aux œufs », chips « poivron ») :

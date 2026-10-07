@@ -99,8 +99,11 @@ Ne touche à aucun panier, ne lance pas menus.js choose.`;
 
 const P_BASKETS = id => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mode web ») et knowledge/.
 Demande : orders/${id}/request.json, menus : orders/${id}/menus.json, choix de l'utilisateur : orders/${id}/choice.json.
-Fais toute la suite jusqu'aux totaux réels de 4 à 6 paniers remplis, puis écris orders/${id}/result.json.
-Ne vide aucun panier, ne génère pas le PDF, ne passe jamais commande.`;
+Fais toute la suite (sondage des articles les plus chers puis comparaison complète sur les meilleurs magasins, pour
+économiser les requêtes) jusqu'aux totaux réels de 2 à 3 paniers remplis, puis écris orders/${id}/result.json.
+Si une tentative précédente a laissé des paniers (orders/${id}/baskets/*.fill.json : cartRef), réutilise ceux des magasins
+retenus (fill est idempotent) et vide les autres (clear <cartRef>). Ne vide aucun autre panier, ne génère pas le PDF,
+ne passe jamais commande.`;
 
 const P_REPAIR = (id, b, cart) => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mode web », réparation) et knowledge/.
 Le panier choisi « ${b.id} » (${b.platform}, cartRef ${b.cartRef}) contient des articles devenus indisponibles, refusés au paiement :
