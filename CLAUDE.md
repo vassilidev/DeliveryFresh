@@ -8,8 +8,8 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
 - Lis `knowledge/*.md` (pièges des plateformes, règles de quantités, équivalences) : c'est ta mémoire de travail.
 - Lis `profile.json` (sinon : `cp profile.example.json profile.json` et demande les infos à l'utilisateur :
   adresse, nb de personnes, équipements, allergies/régime, placard de base).
-- `node tools/recipes.js list` : historique (notes, remarques, dernière fois). Repropose ce qui est bien noté,
-  évite ce qui est mal noté ou fait trop récemment, tiens compte des remarques.
+- `node tools/recipes.js list` : historique (notes, remarques, dernière fois). Un plat noté ≥ 4 peut revenir (un par menu au plus),
+  évite ce qui est mal noté ou fait trop récemment, tiens compte des remarques. **Varier passe avant reproposer** (`knowledge/menus.md`).
 
 ## Au lancement d'une commande, demande (AskUserQuestion, une seule salve)
 1. **Exceptions pour cette fois** : invité(s), régime ponctuel, équipement indisponible… (ne modifie PAS profile.json,
@@ -20,8 +20,9 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
 
 ## Déroulé
 1. **Menus : toujours 2 à 3 propositions, l'utilisateur choisit sur une page HTML.**
-   - Avant de proposer : `node tools/menus.js later` (menus mis de côté → en reproposer un s'il colle aux créneaux)
-     et `node tools/menus.js history` (menus/plats refusés + remarques → ne pas les reproposer tels quels).
+   - Avant de proposer : `node tools/menus.js later` (menus mis de côté → en reproposer un s'il colle aux créneaux),
+     `node tools/menus.js history` (menus/plats refusés + remarques → ne pas les reproposer tels quels) et
+     `node tools/menus.js draw` (cuisines à explorer, produits de saison, plats récents à éviter : à suivre, cf. « Variété »).
    - Chaque proposition : repas rapides, rassasiants, compatibles équipements (`profile.equipment` / `noEquipment`),
      ingrédients qui se recoupent (batch, restes du soir → midi, riz cuit en double…), avec estimation de prix.
      **Chaque menu mélange les cuisines, féculents et protéines** (pas « 5 repas italiens ») en partageant des
@@ -67,7 +68,8 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
 ## Mode web (lancé par `server.js`, sans humain dans la boucle)
 Le serveur t'appelle avec `claude -p` pour une étape précise d'une commande `orders/<id>/`. **Ne pose aucune question** :
 décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale tes arbitrages dans les champs `notes`.
-- `request.json` : `{ title, slots[], people, exceptions, extras, wishes, budget, platforms[] }`.
+- `request.json` : `{ title, slots[], people, guide: { cuisines[], styles[], proteins[] }, exceptions, extras, wishes, budget, platforms[] }`.
+  `guide` = envies cochées (prioritaires sur le tirage de variété ; cuisines cochées = pas de cuisines tirées au sort).
   `people` remplace `profile.people` pour cette commande ; `extras` (courses perso) vont dans la liste ET dans chaque panier ;
   `platforms` = plateformes à comparer.
 - Étape **menus** → écris `menus.json` (règles de `knowledge/menus.md`, format `examples/menus.example.json`, 2-3 propositions, un repas par créneau de `slots`,
@@ -108,11 +110,11 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
 |---|---|
 | `server.js` (racine) | interface web (`npm start`) : profil, comptes, commandes, choix, notes ; t'appelle en mode web |
 | `login.js <ubereats\|deliveroo>` | ouvre Chrome, l'utilisateur se connecte, session gardée dans `.session/` |
-| `ubereats.js` | `stores`, `search`, `carts`, `fill`, `verify`, `qty`, `remove`, `clear <id\|all>`, `checkout` |
-| `deliveroo.js` | `stores`, `search`, `basket`, `fill`, `verify`, `qty`, `clear <menuPath\|all>` |
+| `ubereats.js` | `stores`, `search`, `carts`, `fill`, `verify`, `qty`, `remove`, `clear <id\|all>`, `checkout`, `order` (payé ? livré ? articles facturés) |
+| `deliveroo.js` | `stores`, `search`, `basket`, `fill`, `verify`, `qty`, `clear <menuPath\|all>`, `order <menuPath> <depuis>` |
 | `compare.js` | pré-tri multi-magasins avec cache |
 | `basket.js` | résout les choix de l'agent (titre ± prix, qty/grams) en panier exact |
-| `menus.js` | `choose` (page HTML de choix entre 2-3 menus), `later` (menus mis de côté), `forget <nom>`, `history` |
+| `menus.js` | `choose` (page HTML de choix entre 2-3 menus), `later` (menus mis de côté), `draw` (tirage de variété), `forget <nom>`, `history` |
 | `recipes.js` | `list`, `made`, `rate`, `note`, `remove`, `pdf` (fiches façon HelloFresh) |
 | `check.js` | auto-tests hors-ligne de la logique (`npm run check`) |
 

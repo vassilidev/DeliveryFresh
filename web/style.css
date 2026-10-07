@@ -72,7 +72,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 96px }
 
 /* ---------- Surfaces ---------- */
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow) }
-:not(.grid) > .panel + .panel { margin-top: 16px }
+:not(.grid, .recipe) > .panel + .panel { margin-top: 16px }
 .panel.flat { box-shadow: none; background: transparent; border-style: dashed }
 .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)) }
 .stack > * + * { margin-top: 12px }
@@ -370,3 +370,13 @@ details.more > summary:hover { color: var(--ink) }
 .form-section + .form-section { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--line) }
 .form-section > h2 { margin-bottom: 4px }
 .form-section > p { color: var(--muted); margin-bottom: 20px }
+
+/* Recette d'un plat */
+.dish-link { color: inherit; font-weight: 600; text-decoration: none }
+.dish-link:hover { text-decoration: underline; text-decoration-color: var(--basil) }
+.recipe { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 24px; align-items: start }
+@media (max-width: 760px) { .recipe { grid-template-columns: 1fr } }
+.recipe-steps { margin: 12px 0 0; padding-left: 22px; display: grid; gap: 14px }
+.recipe-steps p { margin: 4px 0 0 }
+.check { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 16px; font-size: 15px; cursor: pointer }
+.check input { margin-top: 3px; accent-color: var(--tomato) }

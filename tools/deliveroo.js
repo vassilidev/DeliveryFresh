@@ -7,6 +7,7 @@
 //   qty <menuPath> <legacyId> <qté> change la quantité (0 = supprimer)
 //   clear <menuPath|all>           vide le panier du commerce (all = tous les paniers en cours)
 //   verify <menuPath>              relit le panier et re-contrôle la disponibilité de chaque article dans le catalogue
+//   order <menuPath> [depuis ISO]   commande passée dans ce commerce depuis la date ? status cart|missing|delivering|delivered|cancelled, total payé
 //   (fill affiche directement le résultat de verify)
 const fs = require('fs');
 const path = require('path');
@@ -244,7 +245,22 @@ async function verify(s, menuPath) {
   };
 }
 
-module.exports = { session, stores, search, storeInfo, basket, fill, setQty, clear, clearAll, verify };
+// Deliveroo ne relie pas une commande à son panier : on prend la commande de ce commerce passée depuis <since>
+// (historique de la page /fr/orders). ponytail: pas le détail des articles facturés (page de chaque commande).
+async function order(s, menuPath, since) {
+  const st = await storeInfo(s.page, menuPath, s.loc);
+  await s.page.goto(BASE + '/fr/orders', { waitUntil: 'domcontentloaded' });
+  const orders = nextData(await s.page.content())?.props.initialState.order?.history?.orders || [];
+  const o = orders.find(x => String(x.restaurantId) === String(st.restaurantId) && new Date(x.legacySubmittedDate) >= new Date(since || 0));
+  const base = { platform: 'deliveroo', cartRef: menuPath, checkedAt: new Date().toISOString() };
+  if (!o) return { ...base, status: (await basket(s, menuPath)).items.length ? 'cart' : 'missing' };
+  return {
+    ...base, orderId: o.id, status: o.status === 'DELIVERED' ? 'delivered' : /CANCEL|FAIL|REJECT/.test(o.status) ? 'cancelled' : 'delivering',
+    paidAt: o.legacySubmittedDate, deliveredAt: o.status === 'DELIVERED' ? o.statusTimestamp : null, total: +o.balance,
+  };
+}
+
+module.exports = { order, session, stores, search, storeInfo, basket, fill, setQty, clear, clearAll, verify };
 
 if (require.main === module) {
   (async () => {
@@ -257,6 +273,7 @@ if (require.main === module) {
         basket: () => basket(s, args[0]),
         fill: async () => { const b = JSON.parse(fs.readFileSync(args[0], 'utf8')); await fill(s, b); return verify(s, b.menuPath); },
         verify: () => verify(s, args[0]),
+        order: () => order(s, args[0], args[1]),
         qty: () => setQty(s, args[0], args[1], args[2]),
         clear: () => args[0] === 'all' ? clearAll(s) : clear(s, args[0]),
       }[cmd];

@@ -94,8 +94,14 @@ function claude(job, prompt) {
 }
 
 // ---- Étapes d'une commande ----
-const P_MENUS = (id, again) => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mode web ») et knowledge/.
+const P_MENUS = (id, again, d = menus.draw(), g = readJson(path.join(orderDir(id), 'request.json'))?.guide || {}) => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mode web ») et knowledge/.
 Demande : orders/${id}/request.json. Étape MENUS uniquement : écris orders/${id}/menus.json (2 à 3 propositions).
+${g.cuisines?.length || g.styles?.length || g.proteins?.length ? `Envies cochées par l'utilisateur (prioritaires) :${g.cuisines?.length ? ` cuisines ${g.cuisines.join(', ')} ;` : ''}${g.styles?.length ? ` style ${g.styles.join(', ')} ;` : ''}${g.proteins?.length ? ` plutôt ${g.proteins.join(', ')} ;` : ''}
+varie les plats à l'intérieur de ces envies (régions, techniques) et complète avec la saison.
+` : ''}Tirage de variété pour cette commande (cf. knowledge/menus.md « Variété entre commandes ») — les envies et exceptions de request.json passent avant :
+- ${g.cuisines?.length ? `cuisines : celles cochées ci-dessus (pas le tirage)` : `cuisines à explorer (au moins 2 dans les menus) : ${d.cuisines.join(', ')}`} ;
+- produits de saison en ${d.month} à mettre en vedette : ${d.seasonal.join(', ')} (saison complète : ${d.allSeasonal}) ;
+- plats récents à ne pas reproposer : ${d.avoid.join(' ; ') || 'aucun'}.
 ${again ? `Les propositions précédentes n'ont pas été retenues : tiens compte de orders/${id}/choice.json (refus, remarques).` : ''}
 Ne touche à aucun panier, ne lance pas menus.js choose.`;
 
@@ -130,16 +136,47 @@ function chosenBasket(dir) {
 
 const verifyCart = async (job, b) => nodeJson(job, `tools/${b.platform === 'ubereats' ? 'ubereats' : 'deliveroo'}.js`, 'verify', b.cartRef);
 
+// Écarts entre le dernier panier vérifié et ce que le magasin a réellement facturé (remplacements, manques, quantités).
+function orderChanges(before = [], after = []) {
+  const key = i => i.cartItemUuid || i.title, now = new Map(after.map(i => [key(i), i])), out = [];
+  for (const i of before) {
+    const j = now.get(key(i));
+    now.delete(key(i));
+    if (!j) out.push({ type: 'removed', from: i.title, cost: [i.cost, 0] });
+    else if (j.title !== i.title) out.push({ type: 'replaced', from: i.title, to: j.title, cost: [i.cost, j.cost] });
+    else if (j.qty !== i.qty || j.grams !== i.grams || j.cost !== i.cost) out.push({ type: 'changed', from: i.title, cost: [i.cost, j.cost], ...(i.grams && { grams: [i.grams, j.grams] }) });
+  }
+  for (const j of now.values()) out.push({ type: 'added', to: j.title, cost: [0, j.cost] });
+  return out;
+}
+
+const STATUS = { delivering: 'payée, en livraison', delivered: 'livrée', cancelled: 'annulée' };
+
+// Actualise la commande : payée ? livrée ? total et articles réellement facturés -> order.json.
+// Pas encore payée (panier toujours là, ou disparu sans commande) : vérification du stock comme avant.
+async function refresh(job, id) {
+  const dir = orderDir(id), b = chosenBasket(dir), pick = readJson(path.join(dir, 'pick.json'));
+  say(job, `🔎 Recherche de la commande ${b.store}`);
+  const o = await nodeJson(job, `tools/${b.platform === 'ubereats' ? 'ubereats' : 'deliveroo'}.js`, 'order', b.cartRef, pick.at);
+  if (['cart', 'missing'].includes(o.status)) { say(job, 'Pas encore payée : vérification du panier'); return checkAndRepair(job, id); }
+  const cart = readJson(path.join(dir, 'cart.json'));
+  o.expected = cart?.total ?? b.total;
+  if (o.items) o.changes = orderChanges(cart?.items, o.items);
+  writeJson(path.join(dir, 'order.json'), o);
+  say(job, `✅ Commande ${STATUS[o.status]} — ${o.total?.toFixed(2)} € payés (prévu ${o.expected?.toFixed(2)} €)${o.changes?.length ? `, ${o.changes.length} changement(s)` : ''}`);
+  await buildPdf(job, id);
+}
+
 // PDF : liste de courses = contenu RÉEL du panier (cart.json), prix par repas = perMeal du panier choisi.
 async function buildPdf(job, id) {
   const dir = orderDir(id);
   const plan = readJson(path.join(dir, 'plan.json'));
   if (!plan) return;
-  const b = chosenBasket(dir), cart = readJson(path.join(dir, 'cart.json'));
-  const items = cart?.items || readJson(path.join(ROOT, b.basketFile))?.items || [];
+  const b = chosenBasket(dir), cart = readJson(path.join(dir, 'cart.json')), paid = readJson(path.join(dir, 'order.json'));
+  const items = paid?.items || cart?.items || readJson(path.join(ROOT, b.basketFile))?.items || [];
   plan.shopping = items.filter(i => !i.unavailable).map(i => ({ name: i.title, qty: i.grams ? `${Math.round(i.grams)} g` : `× ${i.qty || 1}`, price: i.cost ?? i.price }));
-  const total = cart?.total ?? b.total, subtotal = cart?.subtotal ?? b.subtotal;
-  plan.shoppingNote = `${b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'} · ${b.store} — produits ${subtotal?.toFixed(2)} € · total ${total?.toFixed(2)} € (frais inclus)${cart ? ` · panier vérifié le ${new Date(cart.checkedAt).toLocaleString('fr-FR')}` : ''}.`;
+  const total = paid?.total ?? cart?.total ?? b.total, subtotal = paid?.subtotal ?? cart?.subtotal ?? b.subtotal;
+  plan.shoppingNote = `${b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo'} · ${b.store} — produits ${subtotal?.toFixed(2)} € · total ${total?.toFixed(2)} € (frais inclus)${paid ? ` · payé le ${new Date(paid.paidAt).toLocaleString('fr-FR')}` : cart ? ` · panier vérifié le ${new Date(cart.checkedAt).toLocaleString('fr-FR')}` : ''}.`;
   for (const m of plan.meals) { const pm = (b.perMeal || []).find(x => x.when === m.when); if (pm) m.cost = pm.cost; }
   plan.people = readJson(path.join(dir, 'request.json'))?.people;
   plan.paid = total;
@@ -186,7 +223,7 @@ async function checkAndRepair(job, id, { rebuild = false } = {}) {
 
 function startVerify(id, rebuild = false) {
   orderDir(id);
-  return enqueue(id, rebuild ? 'Recréation du panier' : 'Vérification du panier', job => checkAndRepair(job, id, { rebuild }));
+  return enqueue(id, rebuild ? 'Recréation du panier' : 'Actualisation', job => rebuild ? checkAndRepair(job, id, { rebuild }) : refresh(job, id));
 }
 
 function startMenus(id, again = false) {
@@ -225,13 +262,27 @@ function startPick(id, basketId) {
 
 // Supprime une commande. Tant qu'aucun panier n'est choisi, vide aussi les paniers que l'IA a remplis
 // (baskets/*.fill.json) ; une fois choisi, on n'y touche plus (il est peut-être en train d'être payé).
-function deleteOrder(id) {
-  const v = orderView(id), dir = orderDir(id);
+// Plats au plan de chaque commande : { id: [slug] }.
+const plans = () => Object.fromEntries(!fs.existsSync(ORDERS) ? [] : fs.readdirSync(ORDERS)
+  .map(d => [d, (readJson(path.join(ORDERS, d, 'plan.json'))?.meals || []).map(m => m.recipe)]));
+
+// Plats de cette commande qu'aucune autre commande ne prévoit (proposés à la suppression avec elle).
+const ownRecipes = id => { const p = plans(); return [...new Set(p[id] || [])].filter(r => !Object.entries(p).some(([o, rs]) => o !== id && rs.includes(r))); };
+
+// « Mes plats » : plats d'une commande payée (pas seulement choisie), ou déjà notés / cuisinés.
+function myRecipes() {
+  const paid = new Set(Object.entries(plans()).filter(([o]) => ['delivering', 'delivered'].includes(readJson(path.join(ORDERS, o, 'order.json'))?.status)).flatMap(([, rs]) => rs));
+  return recipes.list().filter(r => paid.has(r.slug) || r.timesMade || r.rating || r.notes.length);
+}
+
+function deleteOrder(id, withRecipes = false) {
+  const v = orderView(id), dir = orderDir(id), own = withRecipes ? ownRecipes(id) : [];
   if (['queued', 'running'].includes(v.job?.status)) throw Object.assign(new Error('Une étape est en cours : attends qu\'elle finisse'), { status: 409 });
   const bdir = path.join(dir, 'baskets');
   const carts = v.pick || !fs.existsSync(bdir) ? [] : [...new Map(fs.readdirSync(bdir).filter(f => f.endsWith('.fill.json'))
     .map(f => readJson(path.join(bdir, f))).filter(c => c?.cartRef && !c.missing).map(c => [c.cartRef, c])).values()];
   fs.rmSync(dir, { recursive: true, force: true });
+  for (const r of own) recipes.remove(r);
   if (carts.length) enqueue(null, 'Vidage des paniers d\'une commande supprimée', async job => {
     for (const c of carts) {
       say(job, `🧹 Vidage du panier ${c.platform} · ${c.store || c.cartRef}`);
@@ -252,7 +303,7 @@ function orderView(id) {
   for (const m of plan?.meals || []) { try { m.title = recipes.recipe(m.recipe).title; } catch { m.title = m.recipe; } }
   return {
     id, request: f('request.json'), menus: f('menus.json'), choice: f('choice.json'), result: f('result.json'),
-    plan, pick: f('pick.json'), cart: f('cart.json'), repair: f('repair.json'), hasPdf: fs.existsSync(path.join(dir, 'recettes.pdf')),
+    plan, ownRecipes: ownRecipes(id).map(slug => plan.meals.find(m => m.recipe === slug).title), pick: f('pick.json'), cart: f('cart.json'), order: f('order.json'), repair: f('repair.json'), hasPdf: fs.existsSync(path.join(dir, 'recettes.pdf')),
     job: job && { label: job.label, status: job.status, log: job.log.slice(-60), queued: jobs.filter(j => j.status === 'queued').indexOf(job), startedAt: job.startedAt },
   };
 }
@@ -261,7 +312,7 @@ function listOrders() {
   if (!fs.existsSync(ORDERS)) return [];
   return fs.readdirSync(ORDERS).filter(d => fs.statSync(path.join(ORDERS, d)).isDirectory()).sort().reverse().map(id => {
     const v = orderView(id);
-    const state = v.pick ? 'Terminée' : v.result ? 'Paniers à choisir' : v.choice?.chosen ? 'Paniers en préparation'
+    const state = v.order ? cap(STATUS[v.order.status]) : v.pick ? 'À payer' : v.result ? 'Paniers à choisir' : v.choice?.chosen ? 'Paniers en préparation'
       : v.menus ? 'Menu à choisir' : 'Menus en préparation';
     // step : 0 menus en préparation, 1 menu à choisir, 2 paniers (préparation ou choix), 3 terminée
     const step = v.pick ? 3 : v.result || v.choice?.chosen ? 2 : v.menus ? 1 : 0;
@@ -269,12 +320,14 @@ function listOrders() {
     return {
       id, title: v.request?.title || v.plan?.title || id, state, step, busy: ['queued', 'running'].includes(v.job?.status),
       error: v.job?.status === 'error', stalled: !v.job && !v.pick && !(v.menus && !v.choice?.chosen) && !v.result, meals: v.request?.slots?.length || v.plan?.meals?.length || 0, people: v.request?.people,
-      createdAt: v.request?.createdAt, menu: v.choice?.chosen?.name, store: b?.store, platform: b?.platform, total: v.cart?.total ?? b?.total,
+      createdAt: v.request?.createdAt, menu: v.choice?.chosen?.name, store: b?.store, platform: b?.platform, total: v.order?.total ?? v.cart?.total ?? b?.total,
+      status: v.order?.status,
     };
   });
 }
 
 // ---- Validation des entrées ----
+const cap = s => s && s[0].toUpperCase() + s.slice(1);
 const strList = v => (Array.isArray(v) ? v : String(v || '').split(',')).map(s => String(s).trim()).filter(Boolean).slice(0, 50);
 
 function cleanProfile(p) {
@@ -295,6 +348,7 @@ function cleanRequest(r, profile) {
   const people = Number(r.people) || profile.people;
   return {
     title: String(r.title || `Repas : ${slots[0]} → ${slots.at(-1)}`).slice(0, 120), slots, people,
+    guide: Object.fromEntries(['cuisines', 'styles', 'proteins'].map(k => [k, strList(r.guide?.[k]).map(s => s.slice(0, 40)).slice(0, 15)])),
     exceptions: String(r.exceptions || '').slice(0, 1000), extras: String(r.extras || '').slice(0, 1000),
     wishes: String(r.wishes || '').slice(0, 1000), budget: String(r.budget || 'équilibré').slice(0, 50),
     platforms: strList(r.platforms).filter(p => ['ubereats', 'deliveroo'].includes(p)),
@@ -351,7 +405,7 @@ const routes = [
     send(res, 201, { id });
   }],
   ['GET', /^\/api\/orders\/([\w-]+)$/, (req, res, id) => send(res, 200, orderView(id))],
-  ['DELETE', /^\/api\/orders\/([\w-]+)$/, (req, res, id) => send(res, 200, { clearing: deleteOrder(id) })],
+  ['DELETE', /^\/api\/orders\/([\w-]+)$/, async (req, res, id) => send(res, 200, { clearing: deleteOrder(id, !!(await readBody(req)).recipes) })],
   ['POST', /^\/api\/orders\/([\w-]+)\/choice$/, async (req, res, id) => {
     const dir = orderDir(id);
     const m = readJson(path.join(dir, 'menus.json'));
@@ -383,7 +437,10 @@ const routes = [
     fs.createReadStream(f).pipe(res);
   }],
 
-  ['GET', /^\/api\/recipes$/, (req, res) => send(res, 200, { recipes: recipes.list(), later: menus.later() })],
+  ['GET', /^\/api\/recipes$/, (req, res) => send(res, 200, { recipes: myRecipes(), later: menus.later() })],
+  ['GET', /^\/api\/recipes\/([a-z0-9-]+)$/, (req, res, slug) => {
+    try { send(res, 200, recipes.recipe(slug)); } catch { send(res, 404, { error: 'Recette introuvable' }); }
+  }],
   ['DELETE', /^\/api\/later$/, async (req, res) => { menus.forget(String((await readBody(req)).name || '')); send(res, 200, { ok: true }); }],
   ['DELETE', /^\/api\/recipes\/([a-z0-9-]+)$/, (req, res, slug) => {
     // Une recette encore au plan d'une commande servirait au PDF : supprimer la commande d'abord.
@@ -417,4 +474,4 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) server.listen(PORT, HOST, () => console.log(`DeliveryFresh : http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`));
 
-module.exports = { cleanProfile, cleanRequest, buildPdf };
+module.exports = { cleanProfile, cleanRequest, buildPdf, orderChanges };

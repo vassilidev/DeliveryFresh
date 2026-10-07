@@ -9,6 +9,7 @@
 //   clear <draftUuid|all>            vide le panier (all = tous les paniers du compte)
 //   checkout <draftUuid>             détail des frais + total final, SANS commander
 //   verify <draftUuid>               relit le panier réel : articles devenus indisponibles (prix 0), coûts, total
+//   order <draftUuid>                le panier a-t-il été payé ? status cart|missing|delivering|delivered|cancelled, total payé, articles facturés
 //   (fill affiche directement le résultat de verify)
 const { open, waitCloudflare } = require('./browser');
 const profile = require('./profile');
@@ -89,11 +90,14 @@ function flattenCatalog(map) {
         const opt = it.purchaseInfo?.purchaseOptions?.[0];
         const byWeight = opt?.soldByUnit?.measurementType === 'MEASUREMENT_TYPE_WEIGHT';
         const q = opt?.quantityConstraintsV2;
+        // Selon le magasin, vendu au gramme (prix en c/g, paliers en g) ou au kilo (c/kg, paliers en kg) : on ramène au gramme.
+        const kg = opt?.soldByUnit?.weight?.unitType === 'WEIGHT_UNIT_TYPE_METRIC_KILOGRAM', f = kg ? 1000 : 1;
+        const minG = +((q?.minPermittedNumber || 0) * f).toFixed(3), stepG = +((q?.incrementNumber || 0) * f).toFixed(3);
         out.push({
           itemUuid: it.uuid, title: it.title, available: it.isAvailable && !it.isSoldOut, sectionUuid, subsectionUuid: it.subsectionUuid,
-          // Au poids : l'API donne des centimes/gramme et des paliers (ex. 150 g). price = prix pour 1 palier minimum.
+          // Au poids : centimes/gramme et paliers en g (ex. 150 g). price = prix pour 1 palier minimum.
           ...(byWeight
-            ? { byWeight: true, centsPerGram: it.price, perKg: +(it.price * 10).toFixed(2), minG: q?.minPermittedNumber, stepG: q?.incrementNumber, price: +(it.price * (q?.minPermittedNumber || 0) / 100).toFixed(2) }
+            ? { byWeight: true, ...(kg && { kg }), centsPerGram: it.price / f, perKg: +(it.price * 10 / f).toFixed(2), minG, stepG, price: +(it.price / f * minG / 100).toFixed(2) }
             : { price: it.price / 100 }),
         });
       }
@@ -127,6 +131,7 @@ async function carts(api) {
 }
 
 const WEIGHT_G = { measurementType: 'MEASUREMENT_TYPE_WEIGHT', weight: { unitType: 'WEIGHT_UNIT_TYPE_METRIC_GRAM' } };
+const WEIGHT_KG = { measurementType: 'MEASUREMENT_TYPE_WEIGHT', weight: { unitType: 'WEIGHT_UNIT_TYPE_METRIC_KILOGRAM' } };
 
 // Article au poids : "grams" est arrondi au palier supérieur (ex. 400 g demandés, paliers de 150 -> 450 g).
 function grams(it) {
@@ -139,9 +144,10 @@ const cartItem = (storeUuid, it) => ({
   title: it.title, customizations: {}, specialInstructions: '',
   ...(it.byWeight
     ? {
-      price: it.centsPerGram, quantity: 1,
-      pricedByUnit: { measurementType: 'MEASUREMENT_TYPE_WEIGHT', weight: { unitType: 'WEIGHT_UNIT_TYPE_METRIC_KILOGRAM' } }, soldByUnit: WEIGHT_G,
-      itemQuantity: { inSellableUnit: { value: { coefficient: grams(it) * 1e5, exponent: -5 }, measurementUnit: WEIGHT_G } },
+      // Renvoyé dans l'unité native du magasin (g ou kg).
+      price: it.kg ? Math.round(it.centsPerGram * 1000) : it.centsPerGram, quantity: 1,
+      pricedByUnit: WEIGHT_KG, soldByUnit: it.kg ? WEIGHT_KG : WEIGHT_G,
+      itemQuantity: { inSellableUnit: { value: { coefficient: Math.round(grams(it) * 1e5 / (it.kg ? 1000 : 1)), exponent: -5 }, measurementUnit: it.kg ? WEIGHT_KG : WEIGHT_G } },
     }
     : { price: Math.round(it.price * 100), quantity: it.qty || 1 }),
 });
@@ -210,6 +216,17 @@ async function checkout(api, draftUuid) {
   return { draftUuid, subtotal: eur(d.subtotal?.subtotal?.value), total: eur(d.total?.total?.value), lines };
 }
 
+// Article d'un panier ou d'une commande -> { title, qty, grams, cost (€) }.
+function line(i) {
+  const q = i.itemQuantity?.inSellableUnit;
+  const g = q?.measurementUnit?.measurementType === 'MEASUREMENT_TYPE_WEIGHT' ? q.value.coefficient * 10 ** q.value.exponent : null;
+  const kg = q?.measurementUnit?.weight?.unitType === 'WEIGHT_UNIT_TYPE_METRIC_KILOGRAM';
+  return {
+    cartItemUuid: i.shoppingCartItemUuid, itemUuid: i.uuid, title: i.title, qty: i.quantity, grams: g && Math.round(kg ? g * 1000 : g),
+    cost: +((g ? i.price * g : i.price * i.quantity) / 100).toFixed(2), unavailable: !i.price,
+  };
+}
+
 // Relit le panier réel. Un article passé en rupture reste dans le panier avec price = 0 (refusé au paiement),
 // même si la recherche le montre encore disponible : c'est ce qu'il faut remplacer.
 async function verify(api, draftUuid) {
@@ -217,14 +234,7 @@ async function verify(api, draftUuid) {
   if (!(await carts(api)).some(c => c.draftUuid === draftUuid))
     return { platform: 'ubereats', cartRef: draftUuid, missing: true, checkedAt: new Date().toISOString(), items: [], unavailable: [] };
   const d = await api('getDraftOrderByUuidV1', { draftOrderUuid: draftUuid });
-  const items = d.shoppingCart.items.map(i => {
-    const q = i.itemQuantity?.inSellableUnit;
-    const g = q?.measurementUnit?.measurementType === 'MEASUREMENT_TYPE_WEIGHT' ? q.value.coefficient * 10 ** q.value.exponent : null;
-    return {
-      cartItemUuid: i.shoppingCartItemUuid, itemUuid: i.uuid, title: i.title, qty: i.quantity, grams: g,
-      cost: +((g ? i.price * g : i.price * i.quantity) / 100).toFixed(2), unavailable: !i.price,
-    };
-  });
+  const items = d.shoppingCart.items.map(line);
   const co = await checkout(api, draftUuid);
   return {
     platform: 'ubereats', cartRef: draftUuid, draftUuid, storeUuid: d.storeUuid, checkedAt: new Date().toISOString(),
@@ -232,7 +242,27 @@ async function verify(api, draftUuid) {
   };
 }
 
-module.exports = { session, stores, search, getStore, flattenCatalog, grams, carts, fill, setQty, remove, clear, checkout, verify };
+// Une commande payée garde l'uuid de son panier. Ses articles sont ceux réellement facturés : le magasin a pu en
+// remplacer (même cartItemUuid, autre titre) ou en retirer.
+async function order(api, draftUuid) {
+  const base = { platform: 'ubereats', cartRef: draftUuid, checkedAt: new Date().toISOString() };
+  const o = (await api('getPastOrdersV1', { lastWorkflowUUID: '' })).ordersMap?.[draftUuid];
+  if (!o) {
+    if ((await carts(api)).some(c => c.draftUuid === draftUuid)) return { ...base, status: 'cart' };
+    // ponytail: format de getActiveOrdersV1 jamais vu rempli : on cherche juste l'uuid dans la réponse.
+    const active = JSON.stringify(await api('getActiveOrdersV1', { orderUuid: null, timezone: 'Europe/Paris', showAppUpsellIllustration: true }));
+    return { ...base, status: active.includes(draftUuid) ? 'delivering' : 'missing' };
+  }
+  const b = o.baseEaterOrder;
+  return {
+    ...base, status: b.isCancelled ? 'cancelled' : b.isCompleted ? 'delivered' : 'delivering',
+    paidAt: b.orderStateChanges?.find(s => s.type === 'CREATED')?.stateChangeTime, deliveredAt: b.isCompleted ? b.completedAt : null,
+    subtotal: o.fareInfo?.checkoutInfo?.find(c => c.key === 'eats_fare.subtotal')?.rawValue, total: o.fareInfo?.totalPrice / 100,
+    items: b.shoppingCart.items.map(line),
+  };
+}
+
+module.exports = { order, session, stores, search, getStore, flattenCatalog, grams, carts, fill, setQty, remove, clear, checkout, verify };
 
 if (require.main === module) {
   (async () => {
@@ -249,6 +279,7 @@ if (require.main === module) {
         remove: () => remove(api, args[0], args[1]).then(() => carts(api)),
         clear: () => clear(api, args[0]).then(() => carts(api)),
         checkout: () => checkout(api, args[0]),
+        order: () => order(api, args[0]),
       }[cmd];
       if (!out) throw new Error('Commande inconnue : ' + cmd);
       console.log(JSON.stringify(await out(), null, 1));

@@ -25,6 +25,7 @@
 <div id="toasts" role="status" aria-live="polite"></div>
 <dialog id="dlg"><form method="dialog">
   <h2 id="dlg-t"></h2><p class="muted" id="dlg-b"></p>
+  <label id="dlg-l" class="check" hidden><input type="checkbox" id="dlg-c"> <span></span></label>
   <div class="row"><button class="btn quiet" value="no">Annuler</button><button class="btn" value="yes" id="dlg-ok"></button></div>
 </form></dialog>
 <script>
@@ -74,10 +75,11 @@ function toast(msg, err = false) {
   setTimeout(() => t.remove(), err ? 6000 : 3200);
 }
 
-// Confirmation dans un vrai dialogue (pas de confirm() natif).
-function ask(title, body, ok = 'Confirmer') {
+// Confirmation dans un vrai dialogue (pas de confirm() natif). check : case à cocher en plus, lue ensuite dans $('#dlg-c').checked.
+function ask(title, body, ok = 'Confirmer', check = '') {
   const d = $('#dlg');
   $('#dlg-t').textContent = title; $('#dlg-b').textContent = body; $('#dlg-ok').textContent = ok;
+  $('#dlg-l').hidden = !check; $('#dlg-l span').textContent = check; $('#dlg-c').checked = false;
   d.returnValue = ''; d.showModal();
   return new Promise(res => d.addEventListener('close', () => res(d.returnValue === 'yes'), { once: true }));
 }
@@ -119,7 +121,8 @@ const views = {
       const d = new Date(o.createdAt || o.id.slice(0, 10));
       const todo = !o.busy && !o.error && (o.step === 1 || (o.step === 2 && o.state === 'Paniers à choisir'));
       const pill = o.error ? `<span class="pill err">Échec, à relancer</span>` : o.stalled ? `<span class="pill err">Interrompue, à relancer</span>`
-        : o.busy ? `<span class="pill ok"><span class="dot live"></span>${o.step === 0 ? 'Menus en préparation' : o.step === 3 ? 'Vérification' : 'Paniers en préparation'}</span>`
+        : o.busy ? `<span class="pill ok"><span class="dot live"></span>${o.step === 0 ? 'Menus en préparation' : o.step === 3 ? 'Actualisation' : 'Paniers en préparation'}</span>`
+        : o.status ? `<span class="pill ${o.status === 'cancelled' ? 'err' : o.status === 'delivered' ? '' : 'ok'}">${esc(o.state)}</span>`
         : todo ? `<span class="pill todo">${o.step === 1 ? 'Choisis ton menu' : 'Choisis ton panier'}</span>`
         : o.step === 3 ? `<span class="pill ok">Prête à payer</span>` : `<span class="pill">${esc(o.state)}</span>`;
       return `<a class="order ${todo ? 'attn' : ''}" href="#/o/${esc(o.id)}">
@@ -176,6 +179,7 @@ const views = {
         await act($('#go'), async () => {
           const { id } = await api('/orders', { method: 'POST', body: {
             slots: boxes.filter(b => b.checked).sort((a, b) => a.dataset.k - b.dataset.k).map(x => x.value), people: +people.value,
+            guide: { cuisines: fd.getAll('cuisine'), styles: fd.getAll('style'), proteins: fd.getAll('protein') },
             exceptions: fd.get('exceptions'), extras: fd.get('extras'), wishes: fd.get('wishes'), budget: fd.get('budget'), platforms: fd.getAll('platform'),
           } });
           location.hash = '#/o/' + id;
@@ -203,6 +207,13 @@ const views = {
         <div><span class="label">Où comparer</span>
           <div class="chips">${Object.entries(APP).map(([k, a]) => `<label class="chip"><input type="checkbox" name="platform" value="${k}" checked><span>${a.name}</span></label>`).join('')}</div></div>
       </div></section>
+      <section class="panel stack">
+        <span class="label">Qu'est-ce qui te ferait envie ? <span class="hint">Facultatif : sans rien cocher, l'IA tire au sort des cuisines et des produits de saison</span></span>
+        ${[['cuisine', 'Cuisines', ['française', 'italienne', 'espagnole / portugaise', 'grecque / turque', 'libanaise / orientale', 'marocaine', 'africaine', 'indienne', 'thaïe / vietnamienne', 'chinoise', 'japonaise / coréenne', 'mexicaine', 'américaine']],
+           ['style', 'Style', ['réconfortant', 'léger et frais', 'épicé', 'healthy', 'végétarien', 'mijoté (batch)', 'express (< 15 min)', 'soupes', 'gratins et four']],
+           ['protein', 'Plutôt', ['poulet', 'bœuf', 'porc', 'poisson', 'fruits de mer', 'œufs', 'légumineuses', 'tofu']]].map(([n, t, opts]) =>
+          `<div><span class="hint">${t}</span><div class="chips">${opts.map(v => `<label class="chip"><input type="checkbox" name="${n}" value="${esc(v)}"><span>${esc(cap(v))}</span></label>`).join('')}</div></div>`).join('')}
+      </section>
       <section class="panel"><div class="form-grid">
         <label class="field"><span>Envies du moment <span class="hint">Facultatif</span></span><textarea name="wishes" placeholder="Envie de pâtes, rien de trop long le midi, de belles portions…"></textarea></label>
         <label class="field"><span>Pour cette fois seulement <span class="hint">Facultatif, ton profil ne change pas</span></span><textarea name="exceptions" placeholder="Un invité jeudi soir, pas de micro-ondes cette semaine…"></textarea></label>
@@ -220,9 +231,9 @@ const views = {
     if (busy) poll();
     const req = o.request || {};
     const nMeals = o.choice?.chosen?.meals?.length || (req.slots || []).length;
-    const stage = o.pick ? 3 : o.result || o.choice?.chosen ? 2 : 1;
-    const steps = ['Menus', 'Paniers', 'Prêt à payer'].map((t, i) =>
-      `<li class="${i + 1 < stage || (stage === 3 && !busy) ? 'done' : i + 1 === stage ? 'now' : ''}">${t}</li>`).join('');
+    const stage = ['delivered', 'cancelled'].includes(o.order?.status) ? 5 : o.order ? 4 : o.pick ? 3 : o.result || o.choice?.chosen ? 2 : 1;
+    const steps = ['Menus', 'Paniers', 'Paiement', 'Livraison'].map((t, i) =>
+      `<li class="${i + 1 < stage ? 'done' : i + 1 === stage ? 'now' : ''}">${t}</li>`).join('');
 
     let body = '';
     if (busy) body = workPanel(o.job);
@@ -251,11 +262,12 @@ const views = {
           <div><dt>Budget</dt><dd>${esc(cap(req.budget))}</dd></div>
           <div><dt>Plateformes</dt><dd>${esc((req.platforms || []).map(p => app(p).name).join(', '))}</dd></div>
           ${chosen ? `<div><dt>Menu choisi</dt><dd>${esc(chosen.name)}${chosen.rejectedMeals?.length ? `, sans ${esc(chosen.rejectedMeals.join(', '))}` : ''}</dd></div>` : ''}
+          ${req.guide && Object.values(req.guide).flat().length ? `<div><dt>Envies cochées</dt><dd>${esc(Object.values(req.guide).flat().join(', '))}</dd></div>` : ''}
           ${req.wishes ? `<div><dt>Envies</dt><dd>${esc(req.wishes)}</dd></div>` : ''}
           ${req.exceptions ? `<div><dt>Exceptions</dt><dd>${esc(req.exceptions)}</dd></div>` : ''}
           ${req.extras ? `<div><dt>Courses en plus</dt><dd>${esc(req.extras)}</dd></div>` : ''}
         </dl></details></section>
-      <div class="row section"><button class="btn danger" ${busy ? 'disabled title="Une étape est en cours"' : ''} onclick="delOrder(this, '${esc(id)}', ${!o.pick && !!(o.result || o.choice?.chosen)})">${I.trash}Supprimer la commande</button></div>`;
+      <div class="row section"><button class="btn danger" ${busy ? 'disabled title="Une étape est en cours"' : ''} onclick="delOrder(this, ...${esc(JSON.stringify([id, !o.pick && !!(o.result || o.choice?.chosen), o.ownRecipes || []]))})">${I.trash}Supprimer la commande</button></div>`;
   },
 
   // ---------- Mes plats ----------
@@ -281,7 +293,7 @@ const views = {
         <button class="btn quiet" style="min-height:36px;padding:6px 12px;margin-top:10px" onclick="forgetMenu(this, ${esc(JSON.stringify(m.name))})">${I.trash}Oublier</button></div>`).join('')}</div></section>` : ''}
       <div class="toolbar"><input id="q" type="search" placeholder="Chercher un plat, un ingrédient…" aria-label="Chercher un plat"><span class="muted small">${plural(recipes.length, 'recette')}</span></div>
       <div class="grid">${recipes.map(r => `<article class="dish" data-s="${esc((r.title + ' ' + (r.tags || []).join(' ')).toLowerCase())}">
-        <div><h3>${esc(r.title)}</h3>
+        <div><h3><a class="dish-link" href="#/plat/${esc(r.slug)}">${esc(r.title)}</a></h3>
           <p class="meta">${r.rating ? `★ ${String(r.rating).replace('.', ',')}/5, ` : ''}${r.time} min, ${r.timesMade ? `faite ${plural(r.timesMade, 'fois', 'fois')}${r.lastMade ? `, la dernière le ${esc(day(r.lastMade))}` : ''}` : 'jamais faite'}</p></div>
         <div class="row spread"><div class="stars" role="group" aria-label="Noter ${esc(r.title)}">${[1, 2, 3, 4, 5].map(i =>
           `<button type="button" class="${r.rating && i <= Math.round(r.rating) ? 'on' : ''}" aria-label="${plural(i, 'étoile')}" onclick="act(null, () => api('/recipes/${esc(r.slug)}', { method: 'POST', body: { action: 'rate', score: ${i} } }), 'Noté ${i}/5')">${I.star}</button>`).join('')}</div>
@@ -292,6 +304,21 @@ const views = {
             <button class="btn ghost" aria-label="Ajouter la remarque" style="padding:0 14px;min-height:40px">${I.send}</button></form>
           <button class="btn quiet" style="min-height:36px;padding:6px 12px;margin-top:8px" onclick="delRecipe(this, ${esc(JSON.stringify([r.slug, r.title]))})">${I.trash}Supprimer ce plat</button>
         </div></article>`).join('')}</div>`;
+  },
+
+  // ---------- Recette d'un plat ----------
+  async '/plat/:id'(slug) {
+    const r = await api('/recipes/' + slug);
+    return `<a class="back" href="#/plats" onclick="if (history.length > 1) { history.back(); return false }">${I.back}Retour</a>
+      <div class="page-head"><div><h1>${esc(r.title)}</h1>${r.subtitle ? `<p class="muted">${esc(r.subtitle)}</p>` : ''}</div></div>
+      <dl class="facts"><div><dt>Temps</dt><dd>${esc(r.time)} min</dd></div><div><dt>Difficulté</dt><dd>${esc(r.difficulty)}</dd></div>
+        <div><dt>Portions</dt><dd>${esc(r.servings)}</dd></div><div><dt>Matériel</dt><dd>${esc((r.equipment || []).join(', '))}</dd></div></dl>
+      <div class="recipe section">
+        <section class="panel"><h2>Ingrédients</h2><ul class="items">${(r.ingredients || []).map(x =>
+          `<li class="${x.pantry ? 'muted' : ''}"><span>${esc(x.name)}${x.pantry ? ' <span class="tiny">(placard)</span>' : ''}</span><span class="num">${esc(x.qty)}</span></li>`).join('')}</ul></section>
+        <section class="panel"><h2>Étapes</h2><ol class="recipe-steps">${(r.steps || []).map(st => `<li><b>${esc(st.title)}</b><p>${esc(st.text)}</p></li>`).join('')}</ol>
+          ${r.tip ? `<div class="alert ok" style="margin-top:16px"><div><b>Astuce</b><p class="small">${esc(r.tip)}</p></div></div>` : ''}</section>
+      </div>`;
   },
 
   // ---------- Profil ----------
@@ -414,14 +441,52 @@ function basketsView(o, id, nMeals) {
   </section>`;
 }
 
+// Plan des repas ; chaque plat ouvre sa recette.
+const menuPanel = meals => !meals.length ? '' : `<section class="panel"><h2 style="margin-bottom:18px">Au menu</h2><ul class="plan">${meals.map(m =>
+  `<li><span class="when">${esc(m.when)}</span><a class="dish-link" href="#/plat/${esc(m.recipe)}">${esc(m.title)}</a>${m.cost != null ? `<span class="cost">${eur(m.cost)}</span>` : ''}</li>`).join('')}</ul>
+  <p class="muted tiny" style="margin-top:16px">Prix des ingrédients réellement consommés par repas ; le reste va au placard.</p>
+  <p class="small" style="margin-top:12px"><a href="#/plats">Après les repas, note les plats</a></p></section>`;
+
+const refreshBtn = (id, cls = 'quiet') => `<button class="btn ${cls}" onclick="act(this, () => api('/orders/${esc(id)}/verify', { method: 'POST' }), 'Actualisation lancée')">${I.refresh}Actualiser</button>`;
+
+// Commande payée : statut de livraison, montant réel, ce que le magasin a changé.
+function paidView(o, id, b, a) {
+  const p = o.order, meals = o.plan?.meals || [], t = d => d && new Date(d).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  const diff = p.expected != null && Math.abs(p.total - p.expected) >= 0.01 ? p.total - p.expected : 0;
+  const status = p.status === 'delivered' ? `<div class="alert ok">${I.check}<div><b>Livrée</b><p class="small">Payée ${esc(t(p.paidAt))}, livrée ${esc(t(p.deliveredAt))}.</p></div></div>`
+    : p.status === 'cancelled' ? `<div class="alert">${I.alert}<div><b>Commande annulée</b><p class="small">Vérifie le remboursement dans l'app ${a.name}.</p></div></div>`
+    : `<div class="alert ok">${I.check}<div><b>Payée, en cours de livraison</b><p class="small">Payée ${esc(t(p.paidAt))}. Actualise une fois livrée pour clore la commande.</p></div></div>`;
+  const what = { replaced: 'remplacé par', removed: 'non livré', added: 'ajouté', changed: 'prix ou quantité changés' };
+  const changes = p.changes?.length ? `<section class="panel"><h3>Ce que le magasin a changé</h3><ul class="swaps">${p.changes.map(c =>
+    `<li>${c.from ? `<s>${esc(c.from)}</s> ` : ''}<span class="muted small">${c.grams ? `pesé ${c.grams[0]} g → ${c.grams[1]} g` : what[c.type]}</span>${c.to ? `<br><b>${esc(c.to)}</b>` : ''} <span class="muted small">${eur(c.cost[0])} → ${eur(c.cost[1])}</span></li>`).join('')}</ul></section>` : '';
+  return `<div class="hero-ok"><div class="stack">
+      <section class="panel stack">
+        <p class="muted">${esc(b.store)} sur ${a.name}</p>
+        <div class="big-total">${eur(p.total)}</div>
+        <p class="muted small">payés${diff ? `, ${diff > 0 ? '+' : ''}${eur(diff)} par rapport au panier vérifié (${eur(p.expected)})` : ', comme prévu'}${meals.length ? `, soit ${eur(p.total / meals.length)} par repas` : ''}</p>
+        ${status}
+        <div class="row" style="margin-top:8px">
+          ${o.hasPdf ? `<a class="btn ghost" href="/api/orders/${esc(id)}/pdf" target="_blank">${I.file}Recettes et courses (PDF)</a>` : ''}
+          ${p.status === 'delivering' ? refreshBtn(id, '') : ''}
+        </div>
+      </section>
+      ${changes}
+      ${p.items?.length ? `<section class="panel"><details class="more" data-k="items"><summary>Articles facturés (${plural(p.items.length, 'article')})</summary>
+        <ul class="items">${p.items.map(i => `<li><span>${esc(i.title)}${i.qty > 1 ? ` × ${i.qty}` : ''}</span><span class="num">${eur(i.cost)}</span></li>`).join('')}</ul></details></section>` : ''}
+    </div>
+    ${menuPanel(meals)}
+  </div>`;
+}
+
 function readyView(o, id) {
   const b = o.result.baskets.find(x => x.id === o.pick.basketId) || {}, c = o.cart, a = app(b.platform);
+  if (o.order) return paidView(o, id, b, a);
   const total = c?.total ?? b.total, meals = o.plan?.meals || [];
   const when = c && new Date(c.checkedAt).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
   const status = !c ? `<div class="alert">${I.alert}<div><b>Panier pas encore vérifié</b><p class="small">Lance une vérification avant de payer.</p></div></div>`
-    : c.missing ? `<div class="alert">${I.alert}<div><b>Ce panier n'existe plus sur ${a.name}</b><p class="small">Constaté ${esc(when)} : déjà commandé, vidé ou expiré. Recrée-le seulement si tu n'as pas encore commandé.</p></div></div>`
+    : c.missing ? `<div class="alert">${I.alert}<div><b>Ce panier n'existe plus sur ${a.name}</b><p class="small">Constaté ${esc(when)}, sans commande correspondante : vidé ou expiré. Recrée-le si tu veux toujours commander.</p></div></div>`
     : c.unavailable?.length ? `<div class="alert">${I.alert}<div><b>${plural(c.unavailable.length, 'article indisponible', 'articles indisponibles')}</b><p class="small">${esc(c.unavailable.map(i => i.title).join(', '))}</p></div></div>`
-    : `<div class="alert ok">${I.check}<div><b>Tout est disponible</b><p class="small">${plural(c.items.length, 'article')} vérifiés ${esc(when)}.</p></div></div>`;
+    : `<div class="alert ok">${I.check}<div><b>Tout est disponible</b><p class="small">${plural(c.items.length, 'article')} vérifiés ${esc(when)}${b.total != null && Math.abs(c.total - b.total) >= 0.01 ? `, total passé de ${eur(b.total)} à ${eur(c.total)}` : ''}.</p></div></div>`;
   const r = o.repair;
   const repair = r && (r.replaced?.length || r.removed?.length || r.recipeChanges?.length) ? `<section class="panel"><h3>Ce que l'IA a remplacé</h3><ul class="swaps">
     ${(r.replaced || []).map(x => `<li><s>${esc(x.from)}</s><br><b>${esc(x.to)}</b>${x.note ? ` <span class="muted small">${esc(x.note)}</span>` : ''}</li>`).join('')}
@@ -438,18 +503,15 @@ function readyView(o, id) {
           ${c?.missing ? `<button class="btn" onclick="rebuild(this, '${esc(id)}')">${I.refresh}Recréer le panier</button>`
             : `<a class="btn" href="${a.url}" target="_blank" rel="noopener">${I.ext}Payer sur ${a.name}</a>`}
           ${o.hasPdf ? `<a class="btn ghost" href="/api/orders/${esc(id)}/pdf" target="_blank">${I.file}Recettes et courses (PDF)</a>` : ''}
-          ${c?.missing ? '' : `<button class="btn quiet" onclick="act(this, () => api('/orders/${esc(id)}/verify', { method: 'POST' }), 'Vérification lancée')">${I.refresh}Revérifier</button>`}
+          ${refreshBtn(id)}
         </div>
-        <p class="muted tiny">Un article peut passer en rupture d'ici au paiement. « Revérifier » relit le panier, fait remplacer ce qui manque et met le PDF à jour.</p>
+        <p class="muted tiny">« Actualiser » détecte si tu as payé (montant réel, articles remplacés par le magasin, livraison) et clôt la commande ; sinon il revérifie le stock, fait remplacer ce qui manque et met le PDF à jour.</p>
       </section>
       ${repair}
       ${c?.items?.length ? `<section class="panel"><details class="more" data-k="items"><summary>Contenu du panier (${plural(c.items.length, 'article')})</summary>
         <ul class="items">${c.items.map(i => `<li class="${i.unavailable ? 'out' : ''}"><span>${esc(i.title)}${i.qty > 1 ? ` × ${i.qty}` : ''}</span><span class="num">${eur(i.cost ?? i.price)}</span></li>`).join('')}</ul></details></section>` : ''}
     </div>
-    ${meals.length ? `<section class="panel"><h2 style="margin-bottom:18px">Au menu</h2><ul class="plan">${meals.map(m =>
-      `<li><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b>${m.cost != null ? `<span class="cost">${eur(m.cost)}</span>` : ''}</li>`).join('')}</ul>
-      <p class="muted tiny" style="margin-top:16px">Prix des ingrédients réellement consommés par repas ; le reste va au placard.</p>
-      <p class="small" style="margin-top:12px"><a href="#/plats">Après les repas, note les plats</a></p></section>` : ''}
+    ${menuPanel(meals)}
   </div>`;
 }
 
@@ -466,9 +528,11 @@ async function rebuild(btn, id) {
   if (!await ask('Recréer le panier ?', 'Si tu as déjà passé la commande, tu aurais un panier en double. Ne le fais que si tu n\'as pas encore payé.', 'Recréer le panier')) return;
   act(btn, () => api(`/orders/${id}/verify`, { method: 'POST', body: { rebuild: true } }), 'Recréation lancée');
 }
-async function delOrder(btn, id, carts) {
-  if (!await ask('Supprimer cette commande ?', carts ? 'Les paniers que l\'IA a remplis pour elle sont vidés aussi. Tes autres paniers ne sont pas touchés.' : 'Le panier déjà rempli dans l\'app reste tel quel.', 'Supprimer')) return;
-  act(btn, async () => { await api('/orders/' + id, { method: 'DELETE' }); location.hash = '#/'; }, 'Commande supprimée');
+async function delOrder(btn, id, carts, dishes) {
+  if (!await ask('Supprimer cette commande ?', carts ? 'Les paniers que l\'IA a remplis pour elle sont vidés aussi. Tes autres paniers ne sont pas touchés.' : 'Le panier déjà rempli dans l\'app reste tel quel.', 'Supprimer',
+    dishes.length ? `Supprimer aussi ${dishes.length > 1 ? `ses ${dishes.length} plats` : 'son plat'} (recettes, notes) : ${dishes.join(', ')}` : '')) return;
+  const recipes = $('#dlg-c').checked;
+  act(btn, async () => { await api('/orders/' + id, { method: 'DELETE', body: { recipes } }); location.hash = '#/'; }, recipes ? 'Commande et plats supprimés' : 'Commande supprimée');
 }
 async function forgetMenu(btn, name) {
   if (!await ask(`Oublier « ${name} » ?`, 'L\'IA ne le reproposera plus.', 'Oublier')) return;
@@ -492,13 +556,13 @@ let last = '', lastRoute = '';
 async function render(quiet = false) {
   clearTimeout(timer); mount = null;
   const h = location.hash.slice(1) || '/';
-  const [, , arg] = h.match(/^(\/o)\/([\w-]+)$/) || [];
+  const [, base, arg] = h.match(/^(\/o|\/plat)\/([\w-]+)$/) || [];
   document.querySelectorAll('#nav a').forEach(a => {
-    const on = a.getAttribute('href') === '#' + h || (!!arg && a.getAttribute('href') === '#/');
+    const on = a.getAttribute('href') === '#' + h || (!!arg && a.getAttribute('href') === (base === '/plat' ? '#/plats' : '#/'));
     a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
   });
   $('#cta-new').hidden = h === '/new' || h === '/';
-  const view = arg ? views['/o/:id'] : views[h];
+  const view = arg ? views[base + '/:id'] : views[h];
   const app$ = $('#app'), route = h;
   const slow = !quiet && setTimeout(() => app$.innerHTML = '<div class="skeleton"></div>', 180);
   let html;

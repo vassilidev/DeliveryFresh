@@ -25,3 +25,5 @@
 - Saucisses de Toulouse : souvent par 4 (~400 g) → en prendre 250 g (×2) si dispo, sinon prévoir de congeler.
 - Restes : l'utilisateur ne veut PAS de repas « reste de… » (même déguisés, ex. pâtes gratinées à la dernière portion de sauce) :
   un plat nouveau par créneau, on recoupe les **ingrédients** (parmesan, crème, pâtes), pas les plats. Voir `menus.js history`.
+- Sauce de wrap/kebab sans acheter de yaourt : fromage frais ail & fines herbes (150 g) détendu au citron + eau — un seul pot
+  pour wraps + sauce blanche (les yaourts grecs sont vendus par 4). (2026-10-07)

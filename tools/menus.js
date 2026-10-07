@@ -4,6 +4,7 @@
 //   later                 menus mis de côté ("plus tard") pas encore repris -> à reproposer
 //   history               toutes les décisions passées (choisis, refusés + raisons)
 //   forget <nom>          retire un menu « plus tard » (il ne sera plus reproposé)
+//   draw                  tirage pour varier : cuisines à explorer, produits de saison vedettes, plats récents à éviter
 // menus.json : { title, options: [{ id, name, pitch, estimate, tags: [], meals: [{ when, title, desc, time, recipe? }] }] }
 const fs = require('fs');
 const path = require('path');
@@ -150,13 +151,48 @@ function record(m, source, result) {
   return { chosen: out.find(o => o.decision === 'chosen') || null, decisions: out, note: String(result.note || '').slice(0, 1000) };
 }
 
-module.exports = { html, choose, record, later, forget, history: load };
+// ---- Variété : sans tirage, l'IA retombe toujours sur les mêmes plats (tex-mex, poke bowl…). ----
+const CUISINES = ['française de bistrot', 'provençale', 'alsacienne', 'italienne du Sud', 'espagnole', 'portugaise', 'grecque', 'turque',
+  'libanaise', 'iranienne', 'géorgienne', 'marocaine', 'sénégalaise', 'éthiopienne', 'indienne du Nord', 'indienne du Sud', 'sri-lankaise',
+  'thaïe', 'vietnamienne', 'chinoise du Sichuan', 'cantonaise', 'japonaise', 'coréenne', 'indonésienne', 'philippine', 'péruvienne',
+  'brésilienne', 'mexicaine (pas tex-mex)', 'cajun', 'scandinave', 'hongroise', 'britannique'];
+// Fruits et légumes de saison en France, par mois (janvier = 0).
+const SEASON = [
+  'poireau, chou, endive, céleri-rave, carotte, panais, courge, betterave, mâche, orange, clémentine, kiwi, pomme, poire',
+  'poireau, chou, chou-fleur, endive, panais, topinambour, carotte, betterave, mâche, orange, pamplemousse, kiwi, pomme',
+  'poireau, épinard, endive, chou, carotte, radis, betterave, blette, kiwi, pomme, citron',
+  'asperge, radis, épinard, petits pois, oignon nouveau, artichaut, blette, rhubarbe, fraise',
+  'asperge, petits pois, fèves, radis, courgette, artichaut, concombre, fraise, rhubarbe, cerise',
+  'courgette, tomate, concombre, haricot vert, petits pois, fèves, poivron, fraise, cerise, abricot',
+  'tomate, courgette, aubergine, poivron, concombre, haricot vert, maïs, abricot, pêche, melon',
+  'tomate, aubergine, poivron, courgette, maïs, haricot vert, fenouil, pêche, melon, prune, figue',
+  'tomate, aubergine, poivron, courge, champignons, brocoli, fenouil, raisin, figue, pomme, prune',
+  'courge, potiron, champignons, brocoli, chou-fleur, poireau, céleri, patate douce, châtaigne, pomme, poire, raisin',
+  'courge, poireau, chou, chou de Bruxelles, endive, panais, céleri, champignons, pomme, poire, clémentine',
+  'chou, endive, poireau, courge, panais, topinambour, céleri-rave, mâche, clémentine, orange, kiwi',
+];
+const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
+
+function draw(date = new Date(), h = load()) {
+  const month = date.getMonth();
+  // Plats des 3 derniers menus choisis : à ne pas reproposer cette fois.
+  const recent = h.filter(d => d.decision === 'chosen').slice(-3).flatMap(d => d.meals.map(m => m.title));
+  return {
+    month: date.toLocaleDateString('fr-FR', { month: 'long' }),
+    cuisines: shuffle(CUISINES).slice(0, 4),
+    seasonal: shuffle(SEASON[month].split(', ')).slice(0, 4),
+    allSeasonal: SEASON[month],
+    avoid: [...new Set(recent)],
+  };
+}
+
+module.exports = { html, choose, record, later, forget, draw, history: load };
 
 if (require.main === module) {
   (async () => {
     const [cmd, arg] = process.argv.slice(2);
-    const out = { choose: () => choose(arg), later: () => later(), forget: () => forget(arg).length, history: () => load() }[cmd];
-    if (!out) throw new Error('Commandes : choose <menus.json> | later | forget <nom> | history');
+    const out = { choose: () => choose(arg), later: () => later(), draw: () => draw(), forget: () => forget(arg).length, history: () => load() }[cmd];
+    if (!out) throw new Error('Commandes : choose <menus.json> | later | draw | forget <nom> | history');
     console.log(JSON.stringify(await out(), null, 1));
   })().catch(e => { console.error(e.message); process.exitCode = 1; });
 }
