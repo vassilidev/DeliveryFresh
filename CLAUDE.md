@@ -32,7 +32,7 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
      Le résultat (JSON) est mémorisé dans `memory/menus.json`.
    - Applique le résultat : plats barrés du menu choisi → remplace-les (dans l'esprit des remarques) ; aucun menu
      choisi → nouvelles propositions en tenant compte des refus. Puis écris les recettes manquantes
-     `recipes/<slug>.json` (même format) et le plan `orders/<date>/plan.json`.
+     `recipes/<slug>.json` (format `examples/recipe.example.json`) et le plan `orders/<date>/plan.json`.
 2. **Liste** `orders/<date>/list.json` : besoins **calculés en grammes** depuis les recettes × personnes
    (cf. `knowledge/quantites.md`), + `query`/`match`/`exclude`/`min`/`units` pour la recherche.
 3. **Magasins** : `node tools/ubereats.js stores` et `node tools/deliveroo.js stores` → `targets.json` (6-8 magasins).
@@ -112,11 +112,11 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
 | `deliveroo.js` | `stores`, `search`, `basket`, `fill`, `verify`, `qty`, `clear <menuPath\|all>` |
 | `compare.js` | pré-tri multi-magasins avec cache |
 | `basket.js` | résout les choix de l'agent (titre ± prix, qty/grams) en panier exact |
-| `menus.js` | `choose` (page HTML de choix entre 2-3 menus), `later` (menus mis de côté), `history` |
-| `recipes.js` | `list`, `made`, `rate`, `note`, `pdf` (fiches façon HelloFresh) |
+| `menus.js` | `choose` (page HTML de choix entre 2-3 menus), `later` (menus mis de côté), `forget <nom>`, `history` |
+| `recipes.js` | `list`, `made`, `rate`, `note`, `remove`, `pdf` (fiches façon HelloFresh) |
 | `check.js` | auto-tests hors-ligne de la logique (`npm run check`) |
 
-Fichiers privés (ignorés par git) : `profile.json`, `.session/`, `memory/`, `orders/`.
+Fichiers privés (ignorés par git) : `profile.json`, `.session/`, `memory/`, `orders/`, `recipes/`.
 Chrome tourne invisible (headless) et partagé entre les outils ; `node tools/browser.js stop` le ferme,
 `SHOW_BROWSER=1` le rend visible (débogage).
 `SESSION=probe` devant une commande = profil navigateur alternatif (tests).

@@ -223,6 +223,25 @@ function startPick(id, basketId) {
   });
 }
 
+// Supprime une commande. Tant qu'aucun panier n'est choisi, vide aussi les paniers que l'IA a remplis
+// (baskets/*.fill.json) ; une fois choisi, on n'y touche plus (il est peut-être en train d'être payé).
+function deleteOrder(id) {
+  const v = orderView(id), dir = orderDir(id);
+  if (['queued', 'running'].includes(v.job?.status)) throw Object.assign(new Error('Une étape est en cours : attends qu\'elle finisse'), { status: 409 });
+  const bdir = path.join(dir, 'baskets');
+  const carts = v.pick || !fs.existsSync(bdir) ? [] : [...new Map(fs.readdirSync(bdir).filter(f => f.endsWith('.fill.json'))
+    .map(f => readJson(path.join(bdir, f))).filter(c => c?.cartRef && !c.missing).map(c => [c.cartRef, c])).values()];
+  fs.rmSync(dir, { recursive: true, force: true });
+  if (carts.length) enqueue(null, 'Vidage des paniers d\'une commande supprimée', async job => {
+    for (const c of carts) {
+      say(job, `🧹 Vidage du panier ${c.platform} · ${c.store || c.cartRef}`);
+      try { await node(job, `tools/${c.platform === 'ubereats' ? 'ubereats' : 'deliveroo'}.js`, 'clear', c.cartRef); }
+      catch (e) { say(job, '⚠️ ' + e.message); } // déjà vidé ou expiré : on continue avec les autres
+    }
+  });
+  return carts.length;
+}
+
 function orderView(id) {
   const dir = orderDir(id);
   if (!fs.existsSync(dir)) throw Object.assign(new Error('Commande introuvable'), { status: 404 });
@@ -332,6 +351,7 @@ const routes = [
     send(res, 201, { id });
   }],
   ['GET', /^\/api\/orders\/([\w-]+)$/, (req, res, id) => send(res, 200, orderView(id))],
+  ['DELETE', /^\/api\/orders\/([\w-]+)$/, (req, res, id) => send(res, 200, { clearing: deleteOrder(id) })],
   ['POST', /^\/api\/orders\/([\w-]+)\/choice$/, async (req, res, id) => {
     const dir = orderDir(id);
     const m = readJson(path.join(dir, 'menus.json'));
@@ -364,6 +384,14 @@ const routes = [
   }],
 
   ['GET', /^\/api\/recipes$/, (req, res) => send(res, 200, { recipes: recipes.list(), later: menus.later() })],
+  ['DELETE', /^\/api\/later$/, async (req, res) => { menus.forget(String((await readBody(req)).name || '')); send(res, 200, { ok: true }); }],
+  ['DELETE', /^\/api\/recipes\/([a-z0-9-]+)$/, (req, res, slug) => {
+    // Une recette encore au plan d'une commande servirait au PDF : supprimer la commande d'abord.
+    const used = listOrders().filter(o => readJson(path.join(ORDERS, o.id, 'plan.json'))?.meals?.some(m => m.recipe === slug));
+    if (used.length) throw Object.assign(new Error(`Plat prévu dans « ${used[0].title} » : supprime d'abord cette commande`), { status: 409 });
+    recipes.remove(slug);
+    send(res, 200, { ok: true });
+  }],
   ['POST', /^\/api\/recipes\/([a-z0-9-]+)$/, async (req, res, slug) => {
     const b = await readBody(req);
     if (b.action === 'rate') recipes.rate(slug, b.score, String(b.note || '').slice(0, 1000));

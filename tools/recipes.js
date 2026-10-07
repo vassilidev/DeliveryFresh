@@ -4,6 +4,7 @@
 //   made <slug> [AAAA-MM-JJ]               marque une recette comme faite
 //   rate <slug> <1-5> [remarque...]        note une recette (+ remarque libre)
 //   note <slug> <remarque...>              ajoute une remarque sans note
+//   remove <slug>                          supprime la recette et son historique
 //   pdf <plan.json> [sortie.pdf]           fiches façon HelloFresh (plan = {title, meals:[{when, recipe}], shopping?:[...]})
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +17,7 @@ const recipe = slug => {
   if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('Recette invalide : ' + slug);
   return JSON.parse(fs.readFileSync(path.join(RECIPES, slug + '.json'), 'utf8'));
 };
-const allRecipes = () => fs.readdirSync(RECIPES).filter(f => f.endsWith('.json')).map(f => recipe(f.slice(0, -5)));
+const allRecipes = () => !fs.existsSync(RECIPES) ? [] : fs.readdirSync(RECIPES).filter(f => f.endsWith('.json')).map(f => recipe(f.slice(0, -5)));
 const loadHistory = () => fs.existsSync(HISTORY) ? JSON.parse(fs.readFileSync(HISTORY, 'utf8')) : {};
 function saveHistory(h) { fs.mkdirSync(path.dirname(HISTORY), { recursive: true }); fs.writeFileSync(HISTORY, JSON.stringify(h, null, 1)); }
 const today = () => new Date().toISOString().slice(0, 10);
@@ -102,7 +103,13 @@ function rate(slug, score, text) {
 }
 function note(slug, text) { const h = loadHistory(); entry(h, slug).notes.push({ date: today(), text }); saveHistory(h); }
 
-module.exports = { recipe, allRecipes, list, html, pdf, made, rate, note };
+function remove(slug) {
+  recipe(slug);
+  fs.rmSync(path.join(RECIPES, slug + '.json'));
+  const h = loadHistory(); delete h[slug]; saveHistory(h);
+}
+
+module.exports = { remove, recipe, allRecipes, list, html, pdf, made, rate, note };
 
 if (require.main === module) {
   (async () => {
@@ -112,8 +119,9 @@ if (require.main === module) {
       case 'made': made(slug, rest[0]); console.log('ok'); break;
       case 'rate': rate(slug, rest[0], rest.slice(1).join(' ')); console.log('ok'); break;
       case 'note': note(slug, rest.join(' ')); console.log('ok'); break;
+      case 'remove': remove(slug); console.log('ok'); break;
       case 'pdf': console.log(await pdf(slug, rest[0])); break;
-      default: console.error('Commandes : list | made | rate | note | pdf'); process.exitCode = 1;
+      default: console.error('Commandes : list | made | rate | note | remove | pdf'); process.exitCode = 1;
     }
   })().catch(e => { console.error(e.message); process.exitCode = 1; });
 }

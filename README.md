@@ -18,8 +18,7 @@ Prérequis : Node.js 22+, Google Chrome, [Claude Code](https://claude.com/claude
 ## Structure
 - `server.js` + `web/` : l'interface web locale (Node pur, sans dépendance).
 - `tools/` : outils CLI réutilisables (sortie JSON), documentés en tête de fichier.
-- `recipes/` : bibliothèque de recettes (JSON).
 - `knowledge/` : ce que l'agent a appris (pièges des plateformes, quantités) ; enrichi à chaque commande.
-- Privé, ignoré par git : `profile.json`, `.session/` (cookies), `memory/` (notes et historique), `orders/`.
+- Privé, ignoré par git : `profile.json`, `.session/` (cookies), `memory/` (notes et historique), `orders/`, `recipes/` (tes recettes, format `examples/recipe.example.json`).
 
 > Outil personnel s'appuyant sur les API internes des sites ; elles peuvent changer sans préavis.

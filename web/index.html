@@ -56,6 +56,7 @@ const I = {
   back: ico('<path d="M15 18l-6-6 6-6"/>'),
   send: ico('<path d="M5 12h14M13 6l6 6-6 6"/>'),
   star: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2.8 2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z"/></svg>',
+  trash: ico('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
   basket: ico('<path d="M4 9h16l-1.5 11h-13L4 9Z"/><path d="m8 9 4-6 4 6M9 13v3M15 13v3"/>', 'stroke-width="1.5"'),
 };
 
@@ -253,7 +254,8 @@ const views = {
           ${req.wishes ? `<div><dt>Envies</dt><dd>${esc(req.wishes)}</dd></div>` : ''}
           ${req.exceptions ? `<div><dt>Exceptions</dt><dd>${esc(req.exceptions)}</dd></div>` : ''}
           ${req.extras ? `<div><dt>Courses en plus</dt><dd>${esc(req.extras)}</dd></div>` : ''}
-        </dl></details></section>`;
+        </dl></details></section>
+      <div class="row section"><button class="btn danger" ${busy ? 'disabled title="Une étape est en cours"' : ''} onclick="delOrder(this, '${esc(id)}', ${!o.pick && !!(o.result || o.choice?.chosen)})">${I.trash}Supprimer la commande</button></div>`;
   },
 
   // ---------- Mes plats ----------
@@ -275,7 +277,8 @@ const views = {
     return `<div class="page-head"><div><h1>Mes plats</h1><p class="muted">Tes notes guident les prochains menus : les plats bien notés reviennent, les autres disparaissent.</p></div></div>
       ${later.length ? `<section style="margin-bottom:40px"><h2 style="margin-bottom:16px">Gardés pour plus tard</h2><div class="grid">${later.map(m => `<div class="later-menu">
         <b>${esc(m.name)}</b><p class="small" style="margin-top:6px">${esc(m.meals.map(x => x.title).join(', '))}</p>
-        <p class="tiny muted" style="margin-top:8px">Mis de côté le ${esc(day(m.date))}. L'IA le reproposera quand il collera à tes repas.</p></div>`).join('')}</div></section>` : ''}
+        <p class="tiny muted" style="margin-top:8px">Mis de côté le ${esc(day(m.date))}. L'IA le reproposera quand il collera à tes repas.</p>
+        <button class="btn quiet" style="min-height:36px;padding:6px 12px;margin-top:10px" onclick="forgetMenu(this, ${esc(JSON.stringify(m.name))})">${I.trash}Oublier</button></div>`).join('')}</div></section>` : ''}
       <div class="toolbar"><input id="q" type="search" placeholder="Chercher un plat, un ingrédient…" aria-label="Chercher un plat"><span class="muted small">${plural(recipes.length, 'recette')}</span></div>
       <div class="grid">${recipes.map(r => `<article class="dish" data-s="${esc((r.title + ' ' + (r.tags || []).join(' ')).toLowerCase())}">
         <div><h3>${esc(r.title)}</h3>
@@ -287,6 +290,7 @@ const views = {
         <div class="foot">
           <form data-slug="${esc(r.slug)}"><input name="note" type="text" placeholder="Une remarque ? (trop salé, à refaire…)" aria-label="Remarque sur ${esc(r.title)}">
             <button class="btn ghost" aria-label="Ajouter la remarque" style="padding:0 14px;min-height:40px">${I.send}</button></form>
+          <button class="btn quiet" style="min-height:36px;padding:6px 12px;margin-top:8px" onclick="delRecipe(this, ${esc(JSON.stringify([r.slug, r.title]))})">${I.trash}Supprimer ce plat</button>
         </div></article>`).join('')}</div>`;
   },
 
@@ -461,6 +465,18 @@ async function pick(btn, id, basketId, store, appName) {
 async function rebuild(btn, id) {
   if (!await ask('Recréer le panier ?', 'Si tu as déjà passé la commande, tu aurais un panier en double. Ne le fais que si tu n\'as pas encore payé.', 'Recréer le panier')) return;
   act(btn, () => api(`/orders/${id}/verify`, { method: 'POST', body: { rebuild: true } }), 'Recréation lancée');
+}
+async function delOrder(btn, id, carts) {
+  if (!await ask('Supprimer cette commande ?', carts ? 'Les paniers que l\'IA a remplis pour elle sont vidés aussi. Tes autres paniers ne sont pas touchés.' : 'Le panier déjà rempli dans l\'app reste tel quel.', 'Supprimer')) return;
+  act(btn, async () => { await api('/orders/' + id, { method: 'DELETE' }); location.hash = '#/'; }, 'Commande supprimée');
+}
+async function forgetMenu(btn, name) {
+  if (!await ask(`Oublier « ${name} » ?`, 'L\'IA ne le reproposera plus.', 'Oublier')) return;
+  act(btn, () => api('/later', { method: 'DELETE', body: { name } }), 'Menu oublié');
+}
+async function delRecipe(btn, [slug, title]) {
+  if (!await ask(`Supprimer « ${title} » ?`, 'La recette, ses notes et remarques sont effacées.', 'Supprimer')) return;
+  act(btn, () => api('/recipes/' + slug, { method: 'DELETE' }), 'Plat supprimé');
 }
 async function clearAll(btn, p) {
   if (!await ask(`Vider tous tes paniers ${app(p).name} ?`, 'Y compris ceux que tu as remplis toi-même dans l\'app.', 'Tout vider')) return;

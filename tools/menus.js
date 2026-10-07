@@ -3,6 +3,7 @@
 //   choose <menus.json>   ouvre la page, attend la validation, affiche le résultat JSON et l'enregistre
 //   later                 menus mis de côté ("plus tard") pas encore repris -> à reproposer
 //   history               toutes les décisions passées (choisis, refusés + raisons)
+//   forget <nom>          retire un menu « plus tard » (il ne sera plus reproposé)
 // menus.json : { title, options: [{ id, name, pitch, estimate, tags: [], meals: [{ when, title, desc, time, recipe? }] }] }
 const fs = require('fs');
 const path = require('path');
@@ -17,6 +18,9 @@ function later(h = load()) {
   const seen = new Set();
   return h.filter(d => d.decision === 'later' && !chosen.has(d.name)).reverse().filter(d => !seen.has(d.name) && seen.add(d.name));
 }
+
+// Retire un menu « plus tard » ; les autres décisions (choix, refus) restent pour l'apprentissage.
+function forget(name, h = load()) { const out = h.filter(d => !(d.decision === 'later' && d.name === name)); save(out); return out; }
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -146,13 +150,13 @@ function record(m, source, result) {
   return { chosen: out.find(o => o.decision === 'chosen') || null, decisions: out, note: String(result.note || '').slice(0, 1000) };
 }
 
-module.exports = { html, choose, record, later, history: load };
+module.exports = { html, choose, record, later, forget, history: load };
 
 if (require.main === module) {
   (async () => {
     const [cmd, arg] = process.argv.slice(2);
-    const out = { choose: () => choose(arg), later: () => later(), history: () => load() }[cmd];
-    if (!out) throw new Error('Commandes : choose <menus.json> | later | history');
+    const out = { choose: () => choose(arg), later: () => later(), forget: () => forget(arg).length, history: () => load() }[cmd];
+    if (!out) throw new Error('Commandes : choose <menus.json> | later | forget <nom> | history');
     console.log(JSON.stringify(await out(), null, 1));
   })().catch(e => { console.error(e.message); process.exitCode = 1; });
 }
