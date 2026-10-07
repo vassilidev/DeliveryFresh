@@ -1,0 +1,11 @@
+{
+  "address": "10 Rue Exemple, 75001 Paris",
+  "people": 1,
+  "equipment": ["plaques", "micro-ondes", "bouilloire"],
+  "noEquipment": ["four"],
+  "allergies": [],
+  "diet": [],
+  "pantry": ["huile", "sel", "poivre"],
+  "preferences": "rassasiant, simple, peu d'étapes, bon rapport qualité/quantité",
+  "subscriptions": { "uberOne": false, "deliverooPlus": false }
+}

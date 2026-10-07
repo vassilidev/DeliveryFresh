@@ -1,0 +1,20 @@
+{
+ "title": "Menus — mercredi midi → vendredi midi",
+ "options": [
+  {"id": "A", "name": "Tex-mex & curry", "pitch": "Batch chili le mercredi soir, restes le jeudi midi.", "estimate": "≈ 45 €", "tags": ["batch", "rassasiant"],
+   "meals": [
+    {"when": "Mercredi midi", "title": "Wraps poulet paprika", "desc": "Poulet poêlé, crudités, fromage", "time": 15, "recipe": "wraps-poulet-croquants"},
+    {"when": "Mercredi soir", "title": "Chili con carne", "desc": "2 portions, riz basmati", "time": 25, "recipe": "chili-con-carne"},
+    {"when": "Jeudi midi", "title": "Reste de chili", "desc": "Micro-ondes, 4 min", "time": 4, "recipe": "chili-reste-micro-ondes"}]},
+  {"id": "B", "name": "Pâtes & poêlées", "pitch": "Que des plats en une casserole.", "estimate": "≈ 38 €", "tags": ["one-pot", "économique"],
+   "meals": [
+    {"when": "Mercredi midi", "title": "Pâtes au thon & tomate", "desc": "Sauce minute, parmesan", "time": 15},
+    {"when": "Mercredi soir", "title": "Poêlée saucisses-pommes de terre", "desc": "Oignons, paprika", "time": 25},
+    {"when": "Jeudi midi", "title": "One-pot pâtes poulet-crème", "desc": "Champignons, épinards", "time": 20}]},
+  {"id": "C", "name": "Asiatique express", "pitch": "Woks rapides, riz et nouilles.", "estimate": "≈ 48 €", "tags": ["rapide"],
+   "meals": [
+    {"when": "Mercredi midi", "title": "Nouilles sautées bœuf", "desc": "Sauce soja, poivron", "time": 15},
+    {"when": "Mercredi soir", "title": "Poulet curry-coco", "desc": "Riz cuit en double", "time": 20, "recipe": "poulet-curry-coco"},
+    {"when": "Jeudi midi", "title": "Riz sauté œufs-lardons", "desc": "Riz de la veille", "time": 12, "recipe": "riz-saute-oeufs-lardons"}]}
+ ]
+}

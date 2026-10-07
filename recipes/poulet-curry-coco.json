@@ -1,0 +1,26 @@
+{
+ "slug": "poulet-curry-coco",
+ "title": "Poulet curry-coco & riz",
+ "subtitle": "poivron fondant — on cuit le riz en double pour demain",
+ "time": 20, "difficulty": "Facile", "servings": 1,
+ "equipment": ["Poêle", "Casserole", "Bouilloire"],
+ "tags": ["poulet", "crémeux", "sans four"],
+ "ingredients": [
+  {"name": "Filet de poulet", "qty": "200 g"},
+  {"name": "Lait de coco", "qty": "20 cl"},
+  {"name": "Curry en poudre", "qty": "1 c. à soupe"},
+  {"name": "Oignon", "qty": "1/2"},
+  {"name": "Poivron", "qty": "1/2"},
+  {"name": "Ail", "qty": "1 gousse"},
+  {"name": "Riz basmati", "qty": "150 g (dont 75 g pour vendredi)"},
+  {"name": "Huile, sel, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Riz en double", "text": "Cuis 150 g de riz dans de l'eau bouillante salée (bouilloire = gain de temps). Égoutte, garde la moitié dans une boîte au frigo pour le riz sauté de vendredi."},
+  {"title": "Dorer le poulet", "text": "Coupe le poulet en dés, sale, poivre. Fais-le dorer 5 min dans un filet d'huile à feu vif, puis réserve-le."},
+  {"title": "Les aromates", "text": "Dans la même poêle, fais revenir l'oignon et le poivron émincés 3 min, ajoute l'ail haché et le curry, remue 1 min."},
+  {"title": "Le coco", "text": "Verse le lait de coco, remets le poulet et laisse mijoter 7-8 min jusqu'à ce que la sauce nappe."},
+  {"title": "Servir", "text": "Sers sur le riz chaud."}
+ ],
+ "tip": "Un filet de sauce soja dans la sauce en fin de cuisson remplace le sel et donne de la profondeur."
+}

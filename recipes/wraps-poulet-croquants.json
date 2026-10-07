@@ -1,0 +1,26 @@
+{
+ "slug": "wraps-poulet-croquants",
+ "title": "Wraps poulet paprika & crudités",
+ "subtitle": "avec fromage fondant et crème fraîche",
+ "time": 15, "difficulty": "Facile", "servings": 1,
+ "equipment": ["Poêle", "Micro-ondes"],
+ "tags": ["rapide", "poulet", "sans four"],
+ "ingredients": [
+  {"name": "Tortillas de blé", "qty": "2"},
+  {"name": "Filet de poulet", "qty": "150 g"},
+  {"name": "Tomate", "qty": "1"},
+  {"name": "Salade", "qty": "1 poignée"},
+  {"name": "Fromage râpé", "qty": "30 g"},
+  {"name": "Crème fraîche", "qty": "1 c. à soupe"},
+  {"name": "Épices chili (ou paprika)", "qty": "1/2 c. à café"},
+  {"name": "Huile, sel, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Préparer le poulet", "text": "Coupe le poulet en fines lanières. Sale, poivre et saupoudre d'épices."},
+  {"title": "Cuire", "text": "Fais chauffer un filet d'huile dans une poêle à feu vif. Fais dorer le poulet 6 à 7 min en remuant, jusqu'à ce qu'il ne soit plus rosé à cœur."},
+  {"title": "Les crudités", "text": "Pendant la cuisson, coupe la tomate en dés et rince la salade."},
+  {"title": "Chauffer les tortillas", "text": "Passe les tortillas 20 s au micro-ondes pour les assouplir."},
+  {"title": "Garnir & rouler", "text": "Étale la crème fraîche, ajoute le poulet chaud, les crudités et le fromage. Replie le bas puis roule serré."}
+ ],
+ "tip": "Remets le wrap 10 s dans la poêle chaude, côté soudure en dessous, pour qu'il tienne et soit croustillant."
+}

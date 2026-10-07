@@ -1,0 +1,19 @@
+{
+  "name": "courses-agent",
+  "version": "1.0.0",
+  "description": "Agent courses + recettes Uber Eats / Deliveroo",
+  "scripts": {
+    "login:ubereats": "node tools/login.js ubereats",
+    "login:deliveroo": "node tools/login.js deliveroo",
+    "recipes": "node tools/recipes.js list",
+    "check": "node tools/check.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.63.0"
+  },
+  "private": true
+}

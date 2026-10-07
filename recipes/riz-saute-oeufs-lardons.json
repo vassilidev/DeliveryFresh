@@ -1,0 +1,24 @@
+{
+ "slug": "riz-saute-oeufs-lardons",
+ "title": "Riz sauté œufs, lardons & poivron",
+ "subtitle": "le fried rice anti-gaspi avec le riz de la veille",
+ "time": 12, "difficulty": "Facile", "servings": 1,
+ "equipment": ["Grande poêle"],
+ "tags": ["restes", "anti-gaspi", "œufs", "sans four"],
+ "ingredients": [
+  {"name": "Riz cuit de la veille (froid)", "qty": "~200 g"},
+  {"name": "Lardons", "qty": "100 g"},
+  {"name": "Œufs", "qty": "2"},
+  {"name": "Poivron", "qty": "1/2"},
+  {"name": "Oignon", "qty": "1/2"},
+  {"name": "Sauce soja", "qty": "2 c. à soupe"},
+  {"name": "Huile, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Les lardons", "text": "Fais dorer les lardons à sec 4 min à feu vif."},
+  {"title": "Les légumes", "text": "Ajoute l'oignon et le poivron en petits dés, 3 min."},
+  {"title": "Les œufs", "text": "Pousse tout sur le côté, ajoute un filet d'huile, casse les œufs et brouille-les 1 min."},
+  {"title": "Sauter le riz", "text": "Ajoute le riz froid, la sauce soja, poivre. Saute 3 min à feu vif en mélangeant bien."}
+ ],
+ "tip": "Le riz doit être froid et sec : c'est ce qui donne des grains bien séparés. Pas de sel, la soja et les lardons suffisent."
+}

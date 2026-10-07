@@ -1,0 +1,28 @@
+{
+ "slug": "chili-con-carne",
+ "title": "Chili con carne express",
+ "subtitle": "haricots rouges, riz basmati — 2 portions (une pour le lendemain)",
+ "time": 25, "difficulty": "Facile", "servings": 2,
+ "equipment": ["Sauteuse ou grande poêle", "Casserole", "Bouilloire"],
+ "tags": ["batch", "bœuf", "rassasiant", "sans four"],
+ "ingredients": [
+  {"name": "Bœuf haché 5 %", "qty": "400 g"},
+  {"name": "Haricots rouges (boîte)", "qty": "400 g"},
+  {"name": "Tomates concassées (boîte)", "qty": "400 g"},
+  {"name": "Oignon", "qty": "1"},
+  {"name": "Poivron", "qty": "1"},
+  {"name": "Ail", "qty": "2 gousses"},
+  {"name": "Épices chili (ou 1 c. cumin + 1 c. paprika)", "qty": "2 c. à café"},
+  {"name": "Riz basmati", "qty": "150 g"},
+  {"name": "Fromage râpé & crème fraîche (service)", "qty": "au goût"},
+  {"name": "Huile, sel, poivre", "qty": "", "pantry": true}
+ ],
+ "steps": [
+  {"title": "Lancer le riz", "text": "Fais bouillir de l'eau à la bouilloire, verse-la dans une casserole salée et cuis le riz selon le paquet (~10-11 min). Égoutte."},
+  {"title": "Les légumes", "text": "Émince l'oignon, coupe le poivron en dés, hache l'ail. Fais-les revenir 3 min dans un filet d'huile à feu moyen-vif."},
+  {"title": "La viande", "text": "Ajoute le bœuf haché, émiette-le et fais-le dorer 5 min. Ajoute les épices, sale, poivre, mélange 30 s."},
+  {"title": "Mijoter", "text": "Verse les tomates concassées et les haricots rouges rincés et égouttés. Laisse mijoter 15 min à feu doux en remuant de temps en temps."},
+  {"title": "Servir & stocker", "text": "Sers une portion sur la moitié du riz avec fromage râpé et une cuillère de crème. Mets l'autre portion (chili + riz) dans une boîte au frigo pour demain midi."}
+ ],
+ "tip": "Le chili est encore meilleur le lendemain : les épices ont eu le temps d'infuser."
+}
