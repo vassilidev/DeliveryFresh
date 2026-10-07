@@ -109,6 +109,9 @@ L'app n'est accessible que depuis ton Mac. Le lancer avec `HOST=0.0.0.0 npm star
 | Frais bizarres, produits non trouvés | session expirée : **Comptes → Se connecter** |
 | Une tâche reste « en attente » | une seule tâche tourne à la fois (une fenêtre de connexion encore ouverte bloque la file : ferme-la) |
 | « Article indisponible » au paiement | **🔄 Revérifier le panier** sur la page de la commande |
+| « Ce panier n'existe plus » | déjà commandé, vidé ou expiré. Si tu n'as **pas** commandé : **♻️ Recréer le panier** |
+| « Session expirée » | **Comptes → Se connecter**, puis relance l'étape |
+| « Introuvable » sur un bouton | le serveur tourne avec une ancienne version : `Ctrl + C` puis `npm start` |
 | Un Chrome caché semble bloqué | `node tools/browser.js stop`, puis relance l'étape |
 | Changement d'adresse | modifie-la dans **Profil**, elle est prise en compte automatiquement |
 | Un outil casse du jour au lendemain | les sites ont changé leur fonctionnement interne : ouvre `claude` dans le dossier et demande de réparer l'outil |

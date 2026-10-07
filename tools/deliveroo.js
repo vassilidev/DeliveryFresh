@@ -211,6 +211,8 @@ async function clear(s, menuPath) {
 // remplace lui-même un article manquant (backup ALLOW_PARTNER_SUBSTITUTIONS).
 async function verify(s, menuPath) {
   const b = await basket(s, menuPath);
+  // Panier vide = disparu (vidé, expiré ou déjà commandé).
+  if (!b.items.length) return { platform: 'deliveroo', cartRef: menuPath, store: b.store, missing: true, checkedAt: new Date().toISOString(), items: [], unavailable: [] };
   const queries = b.items.map(i => i.title.split(/ - | {2}/)[0].slice(0, 60));
   const found = (await search(s, menuPath, [...new Set(queries)], { all: true })).results;
   const items = b.items.map((i, k) => {

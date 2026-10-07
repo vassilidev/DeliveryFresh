@@ -108,6 +108,13 @@ ${cart.unavailable.map(i => `- ${i.title} (${i.cartItemUuid || i.legacyId})`).jo
 Remplace-les par des équivalents vérifiés, adapte recettes/plan si besoin, mets à jour le panier « ${b.id} » de result.json
 (perMeal, subtotal, total) et écris orders/${id}/repair.json. Ne passe jamais commande, ne touche à aucun autre panier.`;
 
+const P_REBUILD = (id, b, store) => `Mode web, commande ${id}. Lis CLAUDE.md (section « Mode web », réparation) et knowledge/.
+Le panier choisi « ${b.id} » (${b.platform}, magasin ${store}, ancien cartRef ${b.cartRef}) n'existe plus : l'utilisateur demande de le RECRÉER.
+Contenu à reproduire : orders/${id}/cart.json (dernier contenu vérifié) ou, à défaut, ${b.basketFile}.
+Retrouve chaque produit dans ce magasin (search), remplis le panier (fill), remplace ce qui est indisponible, puis mets à jour
+le panier « ${b.id} » de result.json (cartRef = nouveau draftUuid pour Uber Eats, subtotal, total, perMeal) et écris orders/${id}/repair.json.
+Ne passe jamais commande, ne touche à aucun autre panier.`;
+
 function chosenBasket(dir) {
   const result = readJson(path.join(dir, 'result.json')), pick = readJson(path.join(dir, 'pick.json'));
   const b = result?.baskets?.find(x => x.id === pick?.basketId);
@@ -137,11 +144,27 @@ async function buildPdf(job, id) {
 }
 
 // Vérifie le panier choisi ; si des articles sont en rupture, l'IA les remplace, puis on revérifie. PDF mis à jour.
-async function checkAndRepair(job, id) {
+async function checkAndRepair(job, id, { rebuild = false } = {}) {
   const dir = orderDir(id);
   let b = chosenBasket(dir);
   say(job, `🔎 Vérification du panier ${b.store}`);
   let cart = await verifyCart(job, b);
+  if (cart.missing) {
+    const prev = readJson(path.join(dir, 'cart.json'));
+    if (!rebuild) {
+      // On garde le dernier contenu connu (sert à recréer le panier) et on signale la disparition.
+      writeJson(path.join(dir, 'cart.json'), { ...prev, missing: true, checkedAt: cart.checkedAt });
+      say(job, '⚠️ Ce panier n\'existe plus (déjà commandé, vidé ou expiré) : bouton « Recréer le panier » si besoin.');
+      return;
+    }
+    say(job, '♻️ Recréation du panier');
+    const store = readJson(path.join(ROOT, b.basketFile))?.storeUuid || b.cartRef;
+    fs.rmSync(path.join(dir, 'repair.json'), { force: true });
+    await claude(job, P_REBUILD(id, b, store));
+    b = chosenBasket(dir);
+    cart = await verifyCart(job, b);
+    if (cart.missing) throw new Error('Le panier n\'a pas pu être recréé');
+  }
   writeJson(path.join(dir, 'cart.json'), cart);
   if (cart.unavailable.length) {
     say(job, `⚠️ ${cart.unavailable.length} article(s) indisponible(s) : ${cart.unavailable.map(i => i.title).join(', ')}`);
@@ -156,9 +179,9 @@ async function checkAndRepair(job, id) {
   await buildPdf(job, id);
 }
 
-function startVerify(id) {
+function startVerify(id, rebuild = false) {
   orderDir(id);
-  return enqueue(id, 'Vérification du panier', job => checkAndRepair(job, id));
+  return enqueue(id, rebuild ? 'Recréation du panier' : 'Vérification du panier', job => checkAndRepair(job, id, { rebuild }));
 }
 
 function startMenus(id, again = false) {
@@ -302,11 +325,11 @@ const routes = [
     choice.chosen ? startBaskets(id) : startMenus(id, true);
     send(res, 200, choice);
   }],
-  ['POST', /^\/api\/orders\/([\w-]+)\/verify$/, (req, res, id) => {
+  ['POST', /^\/api\/orders\/([\w-]+)\/verify$/, async (req, res, id) => {
     const v = orderView(id);
     if (['queued', 'running'].includes(v.job?.status)) throw Object.assign(new Error('Déjà en cours'), { status: 409 });
     if (!v.pick) throw Object.assign(new Error('Aucun panier choisi'), { status: 400 });
-    startVerify(id);
+    startVerify(id, !!(await readBody(req)).rebuild);
     send(res, 202, {});
   }],
   ['POST', /^\/api\/orders\/([\w-]+)\/retry$/, (req, res, id) => {

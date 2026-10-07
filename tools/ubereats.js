@@ -31,7 +31,10 @@ async function session() {
       if (retries) { await page.waitForTimeout(2000); return api(ep, body, retries - 1); }
       throw new Error(`${ep}: réponse non JSON (Cloudflare ?) ${r.slice(0, 100)}`);
     }
-    if (j.status !== 'success') throw new Error(`${ep}: ${JSON.stringify(j.data).slice(0, 300)}`);
+    if (j.status !== 'success') {
+      if (String(j.data?.code) === '401') throw new Error('Session Uber Eats expirée : reconnecte-toi (interface : Comptes → Se connecter, ou node tools/login.js ubereats)');
+      throw new Error(`${ep}: ${JSON.stringify(j.data).slice(0, 300)}`);
+    }
     return j.data;
   };
   await setAddress(ctx, api, profile().address);
@@ -186,6 +189,9 @@ async function checkout(api, draftUuid) {
 // Relit le panier réel. Un article passé en rupture reste dans le panier avec price = 0 (refusé au paiement),
 // même si la recherche le montre encore disponible : c'est ce qu'il faut remplacer.
 async function verify(api, draftUuid) {
+  // Panier disparu (vidé, expiré ou déjà commandé) : missing = true, à recréer seulement si l'utilisateur le demande.
+  if (!(await carts(api)).some(c => c.draftUuid === draftUuid))
+    return { platform: 'ubereats', cartRef: draftUuid, missing: true, checkedAt: new Date().toISOString(), items: [], unavailable: [] };
   const d = await api('getDraftOrderByUuidV1', { draftOrderUuid: draftUuid });
   const items = d.shoppingCart.items.map(i => {
     const q = i.itemQuantity?.inSellableUnit;

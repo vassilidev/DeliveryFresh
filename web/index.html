@@ -140,6 +140,8 @@ const views = {
       const b = o.result.baskets.find(x => x.id === o.pick.basketId) || {};
       const c = o.cart, app = b.platform === 'ubereats' ? 'Uber Eats' : 'Deliveroo';
       const status = !c ? '<p class="muted">Panier pas encore vérifié.</p>'
+        : c.missing ? `<p class="err">⚠️ Ce panier n'existe plus sur ${app} (vérifié le ${esc(new Date(c.checkedAt).toLocaleString('fr-FR'))}) : déjà commandé, vidé ou expiré.</p>
+          <p><button class="btn" onclick="rebuild('${esc(id)}')">♻️ Recréer le panier</button> <span class="muted small">À ne faire que si tu n'as pas encore commandé.</span></p>`
         : c.unavailable?.length
           ? `<p class="err">⚠️ ${c.unavailable.length} article(s) indisponible(s) : ${esc(c.unavailable.map(i => i.title).join(', '))}</p>`
           : `<p>✅ Panier vérifié le ${esc(new Date(c.checkedAt).toLocaleString('fr-FR'))} : ${c.items.length} articles, tout est disponible.</p>`;
@@ -149,7 +151,7 @@ const views = {
         ${(r.removed || []).map(x => `<li>${esc(x.from)} retiré${x.why ? ` <span class="muted">(${esc(x.why)})</span>` : ''}</li>`).join('')}
         ${(r.recipeChanges || []).map(x => `<li>📝 ${esc(x.when)} : ${esc(x.change)}</li>`).join('')}</ul></div>` : '';
       const meals = (o.plan?.meals || []).filter(m => m.cost != null);
-      step = `<div class="card"><h2 style="margin-top:0">${c?.unavailable?.length ? '⚠️ Panier à vérifier' : '✅ C\'est prêt'}</h2>
+      step = `<div class="card"><h2 style="margin-top:0">${c?.missing ? '⚠️ Panier introuvable' : c?.unavailable?.length ? '⚠️ Panier à vérifier' : '✅ C\'est prêt'}</h2>
         <p>Ton panier <b>${esc(b.store)}</b> est rempli sur <b>${app}</b> : <b>${eur(c?.total ?? b.total)}</b> frais inclus. Ouvre l'app pour vérifier et payer.</p>
         ${status}${repair}
         ${meals.length ? `<p class="small"><b>Payé :</b> ${eur((c?.total ?? b.total) / o.plan.meals.length)} par repas en moyenne.
@@ -250,6 +252,10 @@ const views = {
   },
 };
 
+async function rebuild(id) {
+  if (!confirm('Recréer le panier dans l\'app ? Ne le fais pas si tu as déjà passé la commande (tu aurais un panier en double).')) return;
+  try { await api(`/orders/${id}/verify`, { method: 'POST', body: { rebuild: true } }); render(); } catch (e) { alert(e.message); }
+}
 async function verify(id) { try { await api(`/orders/${id}/verify`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
 async function retry(id) { try { await api(`/orders/${id}/retry`, { method: 'POST' }); render(); } catch (e) { alert(e.message); } }
 async function pick(id, basketId) { if (!confirm('Garder ce panier et vider les autres ?')) return; try { await api(`/orders/${id}/pick`, { method: 'POST', body: { basketId } }); render(); } catch (e) { alert(e.message); } }

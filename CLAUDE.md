@@ -91,6 +91,9 @@ décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale t
      un ingrédient purement décoratif peut simplement être retiré ;
   4. mets à jour dans `result.json` le panier choisi (`perMeal`, `subtotal`, `total` d'après le dernier `verify`) ;
   5. écris `repair.json` : `{ "replaced": [{ "from", "to", "note" }], "removed": [{ "from", "why" }], "recipeChanges": [{ "when", "change" }] }`.
+- Étape **recréation** (panier disparu, demandée explicitement par l'utilisateur) : reproduis `cart.json` (sinon `basketFile`)
+  dans le même magasin (search + fill + verify, remplacements si besoin), puis mets à jour `cartRef` (nouveau draftUuid
+  Uber Eats), `subtotal`, `total`, `perMeal` dans `result.json` et écris `repair.json`.
 - Termine quand même par la mise à jour de `knowledge/` si tu as appris quelque chose.
 
 ## Outils (`tools/`, sorties JSON)
