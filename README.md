@@ -6,28 +6,17 @@ Tu valides et paies toi-même dans l'app : l'agent ne passe jamais commande.
 
 📖 **Mode d'emploi complet : [NOTICE.md](NOTICE.md)**
 
-## Installation
+## Démarrage rapide
 ```bash
 npm install
-cp profile.example.json profile.json   # adresse, personnes, équipements, allergies, placard
-node tools/login.js ubereats           # connecte-toi dans la fenêtre, puis ferme-la
-node tools/login.js deliveroo
+npm start          # puis http://localhost:3000
 ```
-Google Chrome recommandé (sinon : `npx playwright install chromium`).
-
-## Utilisation
-Lance `claude` dans ce dossier et demande par exemple :
-> Fais-moi les courses et les recettes pour ce soir, demain midi et demain soir.
-
-L'agent suit `CLAUDE.md` : il te demande les exceptions de la semaine (invité, courses perso comme du café),
-propose un menu, compare les magasins, compose les paniers produit par produit, lit les totaux réels et génère le PDF.
-
-Noter une recette après l'avoir faite :
-```bash
-node tools/recipes.js rate chili-con-carne 5 "parfait, un peu plus d'épices la prochaine fois"
-```
+Prérequis : Node.js 22+, Google Chrome, [Claude Code](https://claude.com/claude-code) connecté à ton compte
+(l'IA tourne via `claude -p`, sans clé API). Dans la page : **Profil** → **Comptes** (connexion Uber Eats / Deliveroo)
+→ **Nouvelle commande**. Les menus, la comparaison, le PDF et les notes se font tous dans l'interface.
 
 ## Structure
+- `server.js` + `web/` : l'interface web locale (Node pur, sans dépendance).
 - `tools/` : outils CLI réutilisables (sortie JSON), documentés en tête de fichier.
 - `recipes/` : bibliothèque de recettes (JSON).
 - `knowledge/` : ce que l'agent a appris (pièges des plateformes, quantités) ; enrichi à chaque commande.

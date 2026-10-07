@@ -20,7 +20,8 @@ function later(h = load()) {
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-function html(m) {
+// opts.postUrl : la page envoie le choix au serveur web (sinon : window.submitChoice exposé par Playwright).
+function html(m, opts = {}) {
   const card = o => `<article class="card" data-id="${esc(o.id)}">
   <header><span class="id">${esc(o.id)}</span><div><h2>${esc(o.name)}</h2><p>${esc(o.pitch)}</p></div>
     <div class="meta">${o.estimate ? `<b>${esc(o.estimate)}</b>` : ''}${(o.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div></header>
@@ -62,6 +63,7 @@ footer input { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border
 <main>${m.options.map(card).join('')}</main>
 <footer><div><input id="note" placeholder="Remarque générale (optionnel)"><button id="go" disabled>Valider</button></div></footer>
 <script>
+const POST = ${JSON.stringify(opts.postUrl || '')}, BACK = ${JSON.stringify(opts.backUrl || '/')};
 const state = {};
 document.querySelectorAll('.card').forEach(c => c.querySelectorAll('.actions button').forEach(b => {
   b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
@@ -82,8 +84,15 @@ document.getElementById('go').onclick = async () => {
     id: c.dataset.id, decision: state[c.dataset.id] || null, comment: c.querySelector('textarea').value.trim(),
     rejectedMeals: [...c.querySelectorAll('.nomeal:checked')].map(i => +i.dataset.i),
   }));
-  await window.submitChoice({ options, note: document.getElementById('note').value.trim() });
-  document.body.innerHTML = '<p class="done">✅ C\\'est noté ! Tu peux fermer cette fenêtre.</p>';
+  const r = { options, note: document.getElementById('note').value.trim() };
+  if (POST) {
+    const res = await fetch(POST, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(r) });
+    if (!res.ok) return alert('Erreur : ' + await res.text());
+    location.href = BACK;
+  } else {
+    await window.submitChoice(r);
+    document.body.innerHTML = '<p class="done">✅ C\\'est noté ! Tu peux fermer cette fenêtre.</p>';
+  }
 };
 </script></body></html>`;
 }
@@ -102,20 +111,26 @@ async function choose(file) {
   await b.close().catch(() => {});
   if (!result) throw new Error('Fenêtre fermée sans validation');
 
-  const date = new Date().toISOString().slice(0, 10);
-  const h = load();
-  const out = result.options.filter(o => o.decision).map(o => {
-    const opt = m.options.find(x => x.id === o.id);
-    return {
-      date, source: file, id: o.id, name: opt.name, decision: o.decision, comment: o.comment,
-      rejectedMeals: o.rejectedMeals.map(i => opt.meals[i].title), meals: opt.meals,
-    };
-  });
-  save([...h, ...out]);
-  return { chosen: out.find(o => o.decision === 'chosen') || null, decisions: out, note: result.note };
+  return record(m, file, result);
 }
 
-module.exports = { html, choose, later };
+// Enregistre les décisions dans memory/menus.json et renvoie { chosen, decisions, note }.
+function record(m, source, result) {
+  const date = new Date().toISOString().slice(0, 10);
+  const out = (result.options || []).filter(o => ['chosen', 'rejected', 'later'].includes(o.decision)).map(o => {
+    const opt = m.options.find(x => x.id === o.id);
+    if (!opt) throw new Error('Menu inconnu : ' + o.id);
+    return {
+      date, source, id: o.id, name: opt.name, decision: o.decision, comment: String(o.comment || '').slice(0, 1000),
+      rejectedMeals: (o.rejectedMeals || []).map(i => opt.meals[i]?.title).filter(Boolean), meals: opt.meals,
+    };
+  });
+  if (out.filter(o => o.decision === 'chosen').length > 1) throw new Error('Un seul menu peut être choisi');
+  save([...load(), ...out]);
+  return { chosen: out.find(o => o.decision === 'chosen') || null, decisions: out, note: String(result.note || '').slice(0, 1000) };
+}
+
+module.exports = { html, choose, record, later, history: load };
 
 if (require.main === module) {
   (async () => {

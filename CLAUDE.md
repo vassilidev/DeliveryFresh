@@ -55,9 +55,32 @@ grammages, qualité, gaspillage, substitutions. Tu apprends à chaque commande (
 - Nouvelle capacité réutilisable → ajoute-la dans `tools/` (commande CLI + doc en tête de fichier), pas en script jetable.
 - Après les repas, demande les notes : `node tools/recipes.js made|rate|note <slug> …` (stocké dans `memory/`, privé).
 
+## Mode web (lancé par `server.js`, sans humain dans la boucle)
+Le serveur t'appelle avec `claude -p` pour une étape précise d'une commande `orders/<id>/`. **Ne pose aucune question** :
+décide avec le profil, `request.json`, `knowledge/` et l'historique ; signale tes arbitrages dans les champs `notes`.
+- `request.json` : `{ title, slots[], people, exceptions, extras, wishes, budget, platforms[] }`.
+  `people` remplace `profile.people` pour cette commande ; `extras` (courses perso) vont dans la liste ET dans chaque panier ;
+  `platforms` = plateformes à comparer.
+- Étape **menus** → écris `menus.json` (format `examples/menus.example.json`, 2-3 propositions, un repas par créneau de `slots`,
+  `recipe` = slug si la recette existe déjà). Si `choice.json` existe : propositions refusées → fais autre chose.
+- Étape **paniers** → `choice.json` = `{ chosen: { id, name, rejectedMeals[], comment, meals }, decisions[], note }`.
+  Remplace les plats de `rejectedMeals` (dans l'esprit des remarques), écris recettes + `plan.json` (`{ title, meals: [{ when, recipe }] }`),
+  liste, comparaison, 4-6 paniers remplis (`baskets/<id>.json` via basket.js), puis `result.json` :
+  ```json
+  { "recommendation": "phrase courte",
+    "baskets": [{ "id": "ue-intermarche", "platform": "ubereats", "store": "Intermarché Tronchet",
+      "basketFile": "orders/<id>/baskets/ue-intermarche.json", "cartRef": "<draftUuid | menuPath>",
+      "subtotal": 43.06, "total": 45.33, "fees": [{ "label": "Frais de service", "amount": "3,99 €" }],
+      "eta": "15-30 min", "notes": "substitutions, manques, qualité", "recommended": true }] }
+  ```
+  `cartRef` sert au serveur à vider les paniers non retenus : il doit être exact.
+- Ne génère pas le PDF et ne vide aucun panier : le serveur s'en charge quand l'utilisateur choisit.
+- Termine quand même par la mise à jour de `knowledge/` si tu as appris quelque chose.
+
 ## Outils (`tools/`, sorties JSON)
 | Outil | Rôle |
 |---|---|
+| `server.js` (racine) | interface web (`npm start`) : profil, comptes, commandes, choix, notes ; t'appelle en mode web |
 | `login.js <ubereats\|deliveroo>` | ouvre Chrome, l'utilisateur se connecte, session gardée dans `.session/` |
 | `ubereats.js` | `stores`, `search`, `carts`, `fill`, `qty`, `remove`, `clear <id\|all>`, `checkout` |
 | `deliveroo.js` | `stores`, `search`, `basket`, `fill`, `qty`, `clear <menuPath\|all>` |

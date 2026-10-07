@@ -1,121 +1,107 @@
 # Notice d'utilisation — DeliveryFresh
 
-L'agent prépare tes repas de la semaine : il te propose des menus, écrit les recettes (PDF façon HelloFresh),
+DeliveryFresh prépare tes repas : il te propose des menus, écrit les recettes (PDF façon HelloFresh),
 compare plusieurs paniers réels sur **Uber Eats** et **Deliveroo** (frais inclus) et remplit le meilleur.
-**Il ne paie jamais à ta place** : tu valides la commande toi-même dans l'app.
+Tout se fait depuis une **page web sur ton Mac**. **L'app ne paie jamais à ta place** : tu valides la commande
+toi-même dans l'app Uber Eats ou Deliveroo.
 
 ---
 
 ## 1. Installation (une seule fois)
 
-Prérequis : [Node.js 22+](https://nodejs.org), [Claude Code](https://claude.com/claude-code), Google Chrome (recommandé).
+Il te faut :
+- [Node.js 22+](https://nodejs.org) ;
+- Google Chrome ;
+- [Claude Code](https://claude.com/claude-code), installé **et connecté à ton compte Claude** (lance `claude` une fois et connecte-toi).
 
 ```bash
 git clone https://github.com/vassilidev/DeliveryFresh.git
 cd DeliveryFresh
 npm install
-cp profile.example.json profile.json
 ```
 
-Sans Chrome : `npx playwright install chromium`.
-
-## 2. Ton profil (`profile.json`)
-
-| Champ | Exemple | À quoi ça sert |
-|---|---|---|
-| `address` | `"10 Rue Exemple, 69002 Lyon"` | magasins et frais de livraison |
-| `people` | `1` | portions des recettes et quantités |
-| `equipment` / `noEquipment` | `["plaques", "micro-ondes"]` / `["four"]` | recettes faisables chez toi |
-| `allergies`, `diet` | `[]` | exclusions |
-| `pantry` | `["huile", "sel", "poivre"]` | ce que tu as déjà, jamais acheté |
-| `preferences` | `"rassasiant, simple"` | style de cuisine, budget |
-
-Tu peux aussi laisser l'agent le remplir : il te posera les questions au premier lancement.
-Ce fichier reste sur ta machine (ignoré par git).
-
-## 3. Connexion aux plateformes (une fois, puis quand la session expire)
+## 2. Lancer l'app
 
 ```bash
-npm run login:ubereats
-npm run login:deliveroo
+npm start
 ```
 
-Une fenêtre Chrome s'ouvre : connecte-toi normalement, puis **ferme la fenêtre**. La session est enregistrée
-dans `.session/` et réutilisée ensuite. La connexion est nécessaire pour voir tes vrais frais (Uber One, Deliveroo Plus).
+Ouvre ensuite **http://localhost:3000**. C'est la seule commande à taper : tout le reste se fait dans la page.
+Pour arrêter l'app : `Ctrl + C` dans le terminal.
 
-## 4. Lancer une commande
+## 3. Premier lancement
 
-Dans le dossier du projet :
+1. **Profil** : adresse, nombre de personnes, équipements (plaques, four, micro-ondes…), allergies, régime,
+   ce que tu as toujours au placard, préférences, abonnements. Clique sur **Enregistrer**.
+2. **Comptes** : clique sur **Se connecter** pour Uber Eats, puis pour Deliveroo. Une fenêtre Chrome s'ouvre :
+   connecte-toi normalement, puis **ferme la fenêtre**. La session est gardée.
+   C'est nécessaire pour voir tes vrais frais (Uber One, Deliveroo Plus).
 
-```bash
-claude
-```
+## 4. Passer une commande
 
-Puis demande simplement, par exemple :
-
-> Fais-moi les courses et les recettes pour ce soir, demain midi et demain soir.
-
-> Courses pour la semaine, du lundi midi au vendredi midi, on sera 2 mardi soir.
-
-### Ce qui se passe ensuite
-
-1. **Questions de départ** : exceptions pour cette fois (invité, régime…), courses perso à ajouter
-   (café, petit-déj…), créneaux de repas. Ton profil n'est pas modifié, sauf si tu dis que c'est définitif.
-2. **Choix du menu sur une page web** : l'agent te propose 2 à 3 menus. Pour chacun :
+1. **Nouvelle commande** :
+   - coche les repas à couvrir (midi / soir sur 7 jours) ;
+   - ajuste le nombre de personnes si tu as un invité ;
+   - ajoute tes courses perso (café, petit-déj…), tes exceptions et tes envies ;
+   - clique sur **Me proposer des menus**.
+2. **Attends 1 à 3 min** : la page montre ce que fait l'IA. Tu peux la fermer, ça continue en arrière-plan.
+3. **Choisis ton menu** parmi 2 ou 3 propositions :
    - ✅ **Je prends** : un seul menu possible ;
-   - 👎 **Pas pour moi** : ajoute une remarque pour qu'il comprenne pourquoi ;
+   - 👎 **Pas pour moi** : ajoute une remarque pour qu'elle comprenne pourquoi ;
    - ⏰ **Plus tard** : le menu est gardé et reproposé une prochaine fois ;
-   - **✕ sur un plat** : « je prends ce menu mais pas ce plat », il sera remplacé.
+   - **✕ sur un plat** : « ce menu mais pas ce plat », il sera remplacé.
 
-   Clique sur **Valider** puis ferme la page. Tes refus et tes remarques sont mémorisés pour la suite.
-3. **Comparaison** : l'agent cherche les produits dans 4 à 6 magasins sur les deux plateformes. Il choisit
-   les bons formats et les bonnes quantités, remplit chaque panier et lit le **total réel au paiement**.
-4. **Résultat** : un tableau comparatif avec sa recommandation. Tu choisis, il vide les autres paniers.
-5. **Tu paies** dans l'app Uber Eats ou Deliveroo : le panier est déjà prêt.
-6. **PDF des recettes** dans `orders/<date>/` : la liste de courses, puis une fiche par repas.
+   Si tu ne prends aucun menu, l'IA en propose de nouveaux en tenant compte de tes refus.
+4. **Attends 5 à 15 min** : l'IA cherche les produits dans 4 à 6 magasins, choisit les bons formats
+   et les bonnes quantités, remplit chaque panier et lit le **total réel au paiement**.
+5. **Choisis ton panier** dans le tableau comparatif (le recommandé est surligné). Clique sur **Je prends** :
+   l'app garde ce panier, vide les autres et génère le **PDF des recettes** (liste de courses + une fiche par repas).
+6. **Paie dans l'app** Uber Eats ou Deliveroo : ton panier y est déjà prêt.
 
-## 5. Après les repas : noter
+## 5. Après les repas : « Mes plats »
 
-Dis-le simplement à l'agent (« le chili était top, un peu fade ») ou en ligne de commande :
+Pour chaque recette : donne des **étoiles**, écris une remarque (« un peu fade », « à refaire ») et clique sur
+**Faite aujourd'hui**. L'IA s'en sert ensuite : elle repropose ce que tu as aimé et évite le reste.
+Les menus mis de côté (« Plus tard ») sont listés en haut de la page.
 
-```bash
-node tools/recipes.js rate chili-con-carne 4 "un peu fade, plus d'épices"
-node tools/recipes.js made poulet-curry-coco
-node tools/recipes.js list
-```
+## 6. Comment l'IA est utilisée
 
-L'agent repropose ce que tu as aimé, évite ce que tu n'as pas aimé et tient compte de tes remarques.
-
-## 6. Commandes utiles
-
-| Commande | Effet |
-|---|---|
-| `node tools/menus.js later` | menus mis de côté (« plus tard ») |
-| `node tools/menus.js history` | toutes tes décisions de menus |
-| `node tools/recipes.js list` | recettes connues, notes, remarques |
-| `node tools/ubereats.js carts` | tes paniers Uber Eats |
-| `node tools/ubereats.js clear all` | vide **tous** tes paniers Uber Eats |
-| `node tools/deliveroo.js clear all` | vide tes paniers Deliveroo en cours |
-| `npm run check` | auto-tests (aucune connexion nécessaire) |
+L'app lance **Claude Code en arrière-plan** (`claude -p`), avec **ton compte Claude** : il n'y a pas de clé API
+à configurer, et la consommation est décomptée sur ton abonnement. L'IA n'intervient qu'à **deux moments** :
+proposer les menus, puis composer et comparer les paniers. Le profil, les connexions, le choix du panier,
+le PDF et les notes n'en consomment pas.
 
 ## 7. Tes données
 
-Restent uniquement sur ta machine (jamais publiées sur GitHub) :
+Restent uniquement sur ton Mac (jamais publiées sur GitHub) :
 - `profile.json` : ton profil ;
-- `.session/` : tes cookies de connexion ;
+- `.session/` : tes connexions ;
 - `memory/` : tes notes, remarques et choix de menus ;
-- `orders/` : tes listes, tes paniers et tes PDF.
+- `orders/` : tes commandes, paniers et PDF.
 
 Ce qui est partagé, et s'améliore avec l'usage :
 - `recipes/` : la bibliothèque de recettes ;
-- `knowledge/` : ce que l'agent a appris sur les plateformes et les quantités.
+- `knowledge/` : ce que l'IA a appris sur les plateformes et les quantités.
+
+L'app n'est accessible que depuis ton Mac. Le lancer avec `HOST=0.0.0.0 npm start` l'ouvre au Wi-Fi
+(téléphone), **sans mot de passe** : à éviter sur un réseau partagé.
 
 ## 8. Dépannage
 
 | Problème | Solution |
 |---|---|
-| « Just a moment… » / Cloudflare | ne pas forcer le mode headless ; relancer, la fenêtre Chrome passe le contrôle |
-| Erreur de profil Chrome déjà utilisé | une fenêtre de login est encore ouverte : ferme-la |
-| Frais bizarres, produits non trouvés | session expirée : relance `npm run login:…` |
-| Changement d'adresse | modifie `address` dans `profile.json`, la localisation est recalculée automatiquement |
-| Un outil casse du jour au lendemain | les sites ont changé leur API interne : demande à l'agent de réparer l'outil et de noter la cause dans `knowledge/` |
+| « Claude n'a pas terminé » | vérifie que `claude` est installé et connecté (lance-le une fois dans un terminal), puis **Relancer** |
+| Une étape a échoué | bouton **Relancer** sur la commande ; le détail de l'erreur est affiché |
+| Frais bizarres, produits non trouvés | session expirée : **Comptes → Se connecter** |
+| Une tâche reste « en attente » | une seule tâche tourne à la fois (une fenêtre de connexion encore ouverte bloque la file : ferme-la) |
+| Changement d'adresse | modifie-la dans **Profil**, elle est prise en compte automatiquement |
+| Un outil casse du jour au lendemain | les sites ont changé leur fonctionnement interne : ouvre `claude` dans le dossier et demande de réparer l'outil |
+
+## 9. Mode avancé (terminal)
+
+Tout reste faisable sans l'interface : lance `claude` dans le dossier et parle-lui (il suit `CLAUDE.md`).
+Commandes directes :
+- `node tools/recipes.js list` : recettes, notes et remarques ;
+- `node tools/menus.js later` : menus mis de côté ;
+- `node tools/ubereats.js clear all` : vide tous tes paniers Uber Eats ;
+- `npm run check` : auto-tests (aucune connexion nécessaire).

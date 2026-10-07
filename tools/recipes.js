@@ -12,7 +12,10 @@ const ROOT = path.join(__dirname, '..');
 const RECIPES = path.join(ROOT, 'recipes');
 const HISTORY = path.join(ROOT, 'memory', 'history.json');
 
-const recipe = slug => JSON.parse(fs.readFileSync(path.join(RECIPES, slug + '.json'), 'utf8'));
+const recipe = slug => {
+  if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('Recette invalide : ' + slug);
+  return JSON.parse(fs.readFileSync(path.join(RECIPES, slug + '.json'), 'utf8'));
+};
 const allRecipes = () => fs.readdirSync(RECIPES).filter(f => f.endsWith('.json')).map(f => recipe(f.slice(0, -5)));
 const loadHistory = () => fs.existsSync(HISTORY) ? JSON.parse(fs.readFileSync(HISTORY, 'utf8')) : {};
 function saveHistory(h) { fs.mkdirSync(path.dirname(HISTORY), { recursive: true }); fs.writeFileSync(HISTORY, JSON.stringify(h, null, 1)); }
@@ -84,23 +87,27 @@ async function pdf(planFile, out) {
   return out;
 }
 
-module.exports = { recipe, allRecipes, list, html, pdf };
+function made(slug, date = today()) { const h = loadHistory(); entry(h, slug).made.push(date); saveHistory(h); }
+function rate(slug, score, text) {
+  score = Number(score);
+  if (!(Number.isInteger(score) && score >= 1 && score <= 5)) throw new Error('Note entre 1 et 5');
+  const h = loadHistory(), e = entry(h, slug);
+  e.ratings.push({ date: today(), score });
+  if (text) e.notes.push({ date: today(), text });
+  saveHistory(h);
+}
+function note(slug, text) { const h = loadHistory(); entry(h, slug).notes.push({ date: today(), text }); saveHistory(h); }
+
+module.exports = { recipe, allRecipes, list, html, pdf, made, rate, note };
 
 if (require.main === module) {
   (async () => {
     const [cmd, slug, ...rest] = process.argv.slice(2);
-    const h = loadHistory();
     switch (cmd) {
       case 'list': console.log(JSON.stringify(list(), null, 1)); break;
-      case 'made': entry(h, slug).made.push(rest[0] || today()); saveHistory(h); console.log('ok'); break;
-      case 'rate': {
-        const score = Number(rest[0]);
-        if (!(score >= 1 && score <= 5)) throw new Error('Note entre 1 et 5');
-        const e = entry(h, slug); e.ratings.push({ date: today(), score });
-        if (rest.length > 1) e.notes.push({ date: today(), text: rest.slice(1).join(' ') });
-        saveHistory(h); console.log('ok'); break;
-      }
-      case 'note': entry(h, slug).notes.push({ date: today(), text: rest.join(' ') }); saveHistory(h); console.log('ok'); break;
+      case 'made': made(slug, rest[0]); console.log('ok'); break;
+      case 'rate': rate(slug, rest[0], rest.slice(1).join(' ')); console.log('ok'); break;
+      case 'note': note(slug, rest.join(' ')); console.log('ok'); break;
       case 'pdf': console.log(await pdf(slug, rest[0])); break;
       default: console.error('Commandes : list | made | rate | note | pdf'); process.exitCode = 1;
     }
